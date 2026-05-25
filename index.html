@@ -85,8 +85,8 @@ input::placeholder{color:var(--text3)}
 
 .plaud{
   background:#ffffff;
-  border-radius:12px;
-  padding:28px 28px 24px;
+  border-radius:10px;
+  padding:20px 22px 18px;
   font-family:'Inter',sans-serif;
   color:#1a1a2e;
   border:1px solid #e8e8f0;
@@ -101,7 +101,7 @@ input::placeholder{color:var(--text3)}
 .plaud-subtitle{font-size:13px;color:#707090;margin-bottom:20px}
 
 /* Bloc décision principal - grande carte lavande */
-.plaud-decision-row{display:grid;grid-template-columns:1.8fr 1fr;gap:12px;margin-bottom:12px}
+.plaud-decision-row{display:grid;grid-template-columns:1.8fr 1fr;gap:10px;margin-bottom:10px}
 
 .plaud-decision-main{
   background:#1e3a6e;
@@ -143,7 +143,7 @@ input::placeholder{color:var(--text3)}
 .plaud-neutralite{display:inline-block;background:#f5f5fa;border:1px solid #e0e0ee;border-radius:5px;font-size:10px;color:#8080a8;padding:3px 8px;margin-top:6px}
 
 /* Colonnes technique / défense */
-.plaud-cols{display:grid;grid-template-columns:1.2fr 1fr;gap:12px;margin-bottom:12px}
+.plaud-cols{display:grid;grid-template-columns:1.2fr 1fr;gap:10px;margin-bottom:10px}
 
 .plaud-col{background:#eef4ff;border:1px solid #c8d8f8;border-radius:10px;padding:16px}
 .plaud-col .plaud-highlight{background:#ddeeff;border:1px solid #b0ccf0}
@@ -506,20 +506,21 @@ Génère UNIQUEMENT un JSON valide (sans markdown) avec cette structure exacte :
   "constat": "[constat sportif factuel en 15 mots max, avec **mots clés** en gras]",
   "concurrence": "[situation concurrentielle en 15 mots max]",
   "quote": "[citation clé entre guillemets, 6 mots max, style 'Bases saines et équitables']",
-  "checks": ["[point factuel 1]", "[point factuel 2]", "[point factuel 3]"],
+  "checks": ["[fait précis 1 issu de l'entretien]", "[fait précis 2]", "[fait précis 3]", "[fait précis 4 si pertinent]"],
   "neutralite": "[mot ou label de contexte, ex: 'Neutralité Sportive']",
   "col1_title": "Attaque : [thème]",
   "col1_sub": "[sous-titre du thème attaque en 8 mots]",
   "bars": [
-    {"label": "[compétence 1]", "value": "[Acquis|À stabiliser|En développement]", "pct": 85},
-    {"label": "[compétence 2]", "value": "[Acquis|À stabiliser|En développement]", "pct": 45}
+    {"label": "[compétence 1 spécifique]", "value": "[Acquis|À stabiliser|En développement]", "pct": 85},
+    {"label": "[compétence 2 spécifique]", "value": "[Acquis|À stabiliser|En développement]", "pct": 45},
+    {"label": "[compétence 3 si mentionnée]", "value": "[Acquis|À stabiliser|En développement]", "pct": 60}
   ],
-  "bullets": ["[point attaque 1]", "[point attaque 2]"],
+  "bullets": ["[point attaque spécifique 1]", "[point attaque spécifique 2]", "[point attaque spécifique 3]"],
   "col2_title": "Défense : [thème]",
   "col2_sub": "[sous-titre défense en 8 mots]",
   "highlight_title": "[titre highlight défense]",
   "highlight_sub": "[sous-titre highlight défense en 10 mots]",
-  "leviers": ["Retrouver la **[mot clé]** et [suite]", "Assumer [suite avec **gras**]", "Devenir [suite avec **gras**]"],
+  "leviers": ["Retrouver la **[mot clé précis]** et [suite factuelle]", "Assumer [suite avec **gras** sur mot clé]", "Devenir [suite avec **gras**]", "[4ème levier si pertinent]"],
   "scolaire_sub": "[filière scolaire, ex: Filière Technologique]",
   "scolaire_niveau": "[classe actuelle, ex: Terminale]",
   "scolaire_status": "[statut, ex: En cours | Diplômé]",
@@ -533,8 +534,18 @@ Génère UNIQUEMENT un JSON valide (sans markdown) avec cette structure exacte :
     {"day": "MER", "text": "[activité mercredi]"}
   ],
   "actions": ["[action concrète 1]", "[action concrète 2]", "[action concrète 3]"],
-  "quote_text": "[citation directe du joueur entre guillemets, 8 mots max]"
-}`;
+  "quote_text": "[citation directe du joueur entre guillemets, 10 mots max]"
+}
+
+RÈGLES IMPORTANTES :
+- Sois très spécifique et ancré dans les propos réels de l'entretien
+- Pour les bars, utilise des pourcentages réalistes basés sur ce qui est dit (ex: si le joueur est décrit comme fort en attaque → 80%, s'il manque de lecture → 35%)
+- Pour les leviers, cite des formulations proches de ce qui a été dit (avec **gras** sur les mots clés)
+- Pour les checks, donne des faits précis issus de l'entretien
+- Pour planning et actions, utilise les éléments concrets mentionnés
+- Pour constat et concurrence, sois factuel et précis (noms de compétitions, générations, niveaux)
+- Pour la citation du joueur, utilise une vraie phrase qu'il a dite
+- Le titre doit reprendre la décision réelle prise pendant l'entretien`;
 
     setProgress(50,'Structuration de la fiche…');
     const r=await fetch('https://api.groq.com/openai/v1/chat/completions',{
@@ -701,8 +712,14 @@ async function printFiche(){
       doc = new jsPDF({orientation:pH>pW?'portrait':'landscape',unit:'mm',format:[pW,pH]});
       doc.addImage(tplImg,'JPEG',0,0,pW,pH);
       const drawW=pW-M*2, drawH=drawW*(ficheH/ficheW);
-      const startY=Math.max(M,(pH-drawH)/2);
-      doc.addImage(imgData,'JPEG',M,startY,drawW,Math.min(drawH,pH-startY-M));
+      // Detect logo zone by scanning top pixels of template for content
+      // Place fiche starting at ~22% from top (just below typical logo area)
+      const logoEndY = pH * 0.22;
+      const availH = pH - logoEndY - M;
+      const finalH = Math.min(drawH, availH);
+      const finalW = finalH * (ficheW/ficheH);
+      const startX = M + (drawW - finalW) / 2;
+      doc.addImage(imgData,'JPEG',startX,logoEndY,finalW,finalH);
     } else {
       const M=10, drawW=190, drawH=drawW*(ficheH/ficheW);
       doc = new jsPDF({orientation:'portrait',unit:'mm',format:'a4'});
