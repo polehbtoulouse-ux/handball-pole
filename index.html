@@ -409,6 +409,8 @@ input::placeholder{color:var(--text3)}
 </main>
 
 <script>
+const OR_KEY = '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';
+const OR_BASE = 'https://openrouter.ai/api/v1';
 const GROQ_KEY = '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';
 let audioFile=null, playerName='', transcriptText='';
 const now = new Date();
@@ -555,11 +557,11 @@ RÈGLES IMPORTANTES :
 - Le titre doit reprendre la décision réelle prise pendant l'entretien`;
 
     setProgress(50,'Structuration de la fiche…');
-    const r=await fetch('https://api.groq.com/openai/v1/chat/completions',{
+    const r=await fetch(OR_BASE+'/chat/completions',{
       method:'POST',
-      headers:{'Authorization':'Bearer '+GROQ_KEY,'Content-Type':'application/json'},
+      headers:{'Authorization':'Bearer '+OR_KEY,'Content-Type':'application/json','HTTP-Referer':'https://polehbtoulouse-ux.github.io','X-Title':'HandballAI'},
       body:JSON.stringify({
-        model:'llama-3.3-70b-versatile',
+        model:'meta-llama/llama-3.3-70b-instruct:free',
         temperature:0.1,
         max_tokens:4000,
         messages:[
