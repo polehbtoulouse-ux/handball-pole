@@ -402,7 +402,7 @@ input::placeholder{color:var(--text3)}
     <div class="fiche-actions">
       <button class="btn btn-outline" onclick="resetAll()">Nouvel entretien</button>
       <button class="btn btn-outline" onclick="showTranscript()">Voir transcription</button>
-      <button class="btn btn-success" onclick="printFiche()">🖨 Imprimer / PDF</button>
+      <button class="btn btn-success" onclick="exportFullPDF()">🖨 Exporter PDF (2 pages)</button>
     </div>
   </div>
 
@@ -534,7 +534,8 @@ Génère UNIQUEMENT un JSON valide (sans markdown) avec cette structure exacte :
     {"day": "MER", "text": "[activité mercredi]"}
   ],
   "actions": ["[action concrète 1]", "[action concrète 2]", "[action concrète 3]"],
-  "quote_text": "[citation directe du joueur entre guillemets, 10 mots max]"
+  "quote_text": "[citation directe du joueur entre guillemets, 10 mots max]",
+  "compte_rendu": "COMPTE RENDU D'ENTRETIEN\n\nDate : [date]\nJoueur : [nom]\n\nCONTEXTE\n[Paragraphe 4-5 lignes sur le contexte de l'entretien, qui était présent, quel était l'objet]\n\nÉCHANGES\n[3 à 5 paragraphes rédigés de 4-6 lignes chacun, restituant fidèlement les thèmes abordés avec les propos du joueur et des entraîneurs. Utiliser des formulations comme 'Le joueur exprime...', 'Les entraîneurs soulignent...', 'Il est rappelé que...']\n\nPOINTS D'ATTENTION\n— [point 1 spécifique]\n— [point 2 spécifique]\n— [point 3 spécifique]\n— [point 4 si pertinent]\n\nRELEVÉ DE DÉCISIONS\n— [décision/engagement 1]\n— [décision/engagement 2]\n— [décision/engagement 3]\n— [décision/engagement 4 si pertinent]"
 }
 
 RÈGLES IMPORTANTES :
@@ -552,7 +553,7 @@ RÈGLES IMPORTANTES :
       method:'POST',
       headers:{'Authorization':'Bearer '+GROQ_KEY,'Content-Type':'application/json'},
       body:JSON.stringify({
-        model:'llama-3.3-70b-versatile',
+        model:'llama-3.1-8b-instant',
         temperature:0.25,
         max_tokens:3000,
         messages:[
@@ -680,8 +681,146 @@ function renderFiche(d,firstName){
   document.getElementById('plaudQAvatar').textContent=firstName[0].toUpperCase();
   document.getElementById('plaudQText').textContent=d.quote_text||'';
 
+  // Compte rendu texte
+  if (d.compte_rendu) {
+    window._compteRendu = d.compte_rendu;
+  }
+
   document.getElementById('ficheArea').classList.add('on');
   document.getElementById('ficheArea').scrollIntoView({behavior:'smooth',block:'start'});
+}
+
+async function exportFullPDF(){
+  const ficheEl = document.getElementById('plaudDoc');
+  if (!ficheEl) return;
+  const btn = event.target;
+  const oldTxt = btn.textContent;
+  btn.textContent = 'Génération...';
+  btn.disabled = true;
+
+  try {
+    const {jsPDF} = window.jspdf;
+
+    // === PAGE 1 : Capture de la fiche visuelle ===
+    const canvas = await html2canvas(ficheEl, {scale:2, useCORS:true, backgroundColor:'#ffffff', logging:false});
+    const ficheImg = canvas.toDataURL('image/jpeg', 0.95);
+    const ficheW = canvas.width, ficheH = canvas.height;
+
+    let doc;
+    const M = 12;
+
+    if (pdfTemplateFile) {
+      // Avec template
+      pdfjsLib.GlobalWorkerOptions.workerSrc = 'https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.worker.min.js';
+      const ab = await pdfTemplateFile.arrayBuffer();
+      const pdf0 = await pdfjsLib.getDocument({data:ab}).promise;
+      const p1 = await pdf0.getPage(1);
+      const vp = p1.getViewport({scale:3});
+      const offC = document.createElement('canvas');
+      offC.width=vp.width; offC.height=vp.height;
+      await p1.render({canvasContext:offC.getContext('2d'),viewport:vp}).promise;
+      const tplImg = offC.toDataURL('image/jpeg', 0.92);
+      const origVp = p1.getViewport({scale:1});
+      const pW=origVp.width*0.352777, pH=origVp.height*0.352777;
+      doc = new jsPDF({orientation:pH>pW?'portrait':'landscape',unit:'mm',format:[pW,pH]});
+      // Template fond
+      doc.addImage(tplImg,'JPEG',0,0,pW,pH);
+      // Fiche positionnée sous le logo
+      const logoEndY = pH * 0.22;
+      const availH = pH - logoEndY - M;
+      const drawW = pW - M*2;
+      const drawH = drawW * (ficheH/ficheW);
+      const finalH = Math.min(drawH, availH);
+      const finalW = finalH * (ficheW/ficheH);
+      const startX = M + (drawW - finalW)/2;
+      doc.addImage(ficheImg,'JPEG',startX,logoEndY,finalW,finalH);
+
+      // === PAGE 2+ : Compte rendu texte avec template en fond ===
+      if (window._compteRendu) {
+        doc.addPage();
+        doc.addImage(tplImg,'JPEG',0,0,pW,pH);
+        renderTextPage(doc, window._compteRendu, M, pH*0.22, pW-M*2, pH-pH*0.22-M, pW, pH, tplImg);
+      }
+    } else {
+      // Sans template - A4
+      const pW=210, pH=297;
+      doc = new jsPDF({orientation:'portrait',unit:'mm',format:'a4'});
+      const drawW=pW-M*2, drawH=drawW*(ficheH/ficheW);
+      const scale = drawH > pH-M*2 ? (pH-M*2)/drawH : 1;
+      doc.addImage(ficheImg,'JPEG',M,M,drawW*scale,drawH*scale);
+
+      // Page 2 texte
+      if (window._compteRendu) {
+        doc.addPage();
+        renderTextPage(doc, window._compteRendu, M, M, pW-M*2, pH-M*2, pW, pH, null);
+      }
+    }
+
+    const safe = playerName.replace(/[^a-z0-9]/gi,'_').toLowerCase();
+    doc.save('CR_'+safe+'_'+new Date().toISOString().slice(0,10)+'.pdf');
+    btn.textContent = oldTxt;
+    btn.disabled = false;
+
+  } catch(err) {
+    btn.textContent = oldTxt;
+    btn.disabled = false;
+    document.getElementById('errorBox').innerHTML = 'Erreur export : ' + err.message;
+    document.getElementById('errorBox').style.display = 'block';
+  }
+}
+
+function renderTextPage(doc, text, x, startY, maxW, maxH, pW, pH, tplImg) {
+  const lineH = 5.0;
+  let y = startY;
+
+  const lines = text.split('\n');
+  for (const raw of lines) {
+    const line = raw.trim();
+
+    if (y > startY + maxH - 5) {
+      // Nouvelle page
+      doc.addPage();
+      if (tplImg) doc.addImage(tplImg,'JPEG',0,0,pW,pH);
+      y = startY;
+    }
+
+    if (!line) { y += 2.5; continue; }
+
+    const isSectionTitle = /^[A-ZÀÂÇÉÈÊËÎÏÔÛÙÜŸÆŒ '\-]{4,}$/.test(line) && !line.startsWith('—');
+
+    if (isSectionTitle) {
+      y += 3;
+      doc.setFont('helvetica','bold');
+      doc.setFontSize(10);
+      doc.setTextColor(30,58,110);
+      doc.text(line, x, y);
+      doc.setDrawColor(30,58,110);
+      doc.setLineWidth(0.3);
+      doc.line(x, y+1.5, x+maxW, y+1.5);
+      y += 7;
+    } else if (line.startsWith('—') || line.startsWith('-')) {
+      const bullet = line.replace(/^[—\-]\s*/,'');
+      doc.setFont('helvetica','normal');
+      doc.setFontSize(9.5);
+      doc.setTextColor(40,40,60);
+      doc.setFillColor(30,58,110);
+      doc.circle(x+2, y-1.2, 0.8, 'F');
+      const wrapped = doc.splitTextToSize(bullet, maxW-6);
+      for (const wl of wrapped) {
+        if (y > startY + maxH) break;
+        doc.text(wl, x+5, y); y += lineH;
+      }
+    } else {
+      doc.setFont('helvetica','normal');
+      doc.setFontSize(9.5);
+      doc.setTextColor(50,50,70);
+      const wrapped = doc.splitTextToSize(line, maxW);
+      for (const wl of wrapped) {
+        if (y > startY + maxH) { doc.addPage(); if(tplImg) doc.addImage(tplImg,'JPEG',0,0,pW,pH); y=startY; }
+        doc.text(wl, x, y); y += lineH;
+      }
+    }
+  }
 }
 
 async function printFiche(){
@@ -755,6 +894,7 @@ function showTranscript(){
 }
 
 let pdfTemplateFile = null;
+window._compteRendu = '';
 
 function handleTemplate(input) {
   const f = input.files[0]; if (!f) return;
@@ -802,7 +942,7 @@ if (dp) {
 }
 
 function resetAll(){
-  audioFile=null;transcriptText='';pdfTemplateFile=null;
+  audioFile=null;transcriptText='';pdfTemplateFile=null;window._compteRendu='';
   document.getElementById('audioFile').value='';
   document.getElementById('pdfTemplate').value='';
   document.getElementById('pdfInfo').style.display='none';
