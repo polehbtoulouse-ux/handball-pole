@@ -6,6 +6,8 @@
 <title>HandballAI — Compte rendu d'entretien</title>
 <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
 <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
 <style>
 *,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
 :root{
@@ -256,6 +258,24 @@ input::placeholder{color:var(--text3)}
     <div id="audioInfo" style="display:none" class="file-ok">
       <svg viewBox="0 0 24 24"><polyline points="20 6 9 17 4 12"/></svg>
       <div><div class="fn" id="audioName"></div><div class="fs" id="audioSize"></div></div>
+    </div>
+  </div>
+
+  <div class="panel">
+    <div class="panel-label">Template PDF <span style="font-size:10px;color:var(--text3);font-weight:400;text-transform:none;letter-spacing:0">(optionnel — votre modèle de document)</span></div>
+    <div class="upload-box" id="dropPDF" style="min-height:80px">
+      <input type="file" id="pdfTemplate" accept=".pdf" onchange="handleTemplate(this)">
+      <svg viewBox="0 0 24 24"><path d="M14 2H6a2 2 0 00-2 2v16a2 2 0 002 2h12a2 2 0 002-2V8z"/><polyline points="14 2 14 8 20 8"/></svg>
+      <div class="ub-t">Importer votre template PDF</div>
+      <div class="ub-s">La fiche sera collée par-dessus</div>
+    </div>
+    <div id="pdfInfo" style="display:none" class="file-ok">
+      <svg viewBox="0 0 24 24"><polyline points="20 6 9 17 4 12"/></svg>
+      <div><div class="fn" id="pdfName"></div><div class="fs" id="pdfSize"></div></div>
+    </div>
+    <div id="templatePreview" style="display:none;margin-top:10px">
+      <canvas id="templateCanvas" style="width:100%;border-radius:6px;border:1px solid var(--border)"></canvas>
+      <div id="tpInfo" style="font-size:11px;color:var(--text3);margin-top:5px"></div>
     </div>
   </div>
 
@@ -653,8 +673,56 @@ function renderFiche(d,firstName){
   document.getElementById('ficheArea').scrollIntoView({behavior:'smooth',block:'start'});
 }
 
-function printFiche(){
-  window.print();
+async function printFiche(){
+  const ficheEl = document.getElementById('plaudDoc');
+  if (!ficheEl) return;
+  const btn = event.target;
+  const oldTxt = btn.textContent;
+  btn.textContent = 'Génération...';
+  btn.disabled = true;
+  try {
+    const canvas = await html2canvas(ficheEl, {scale:2, useCORS:true, backgroundColor:'#ffffff', logging:false});
+    const imgData = canvas.toDataURL('image/jpeg', 0.95);
+    const ficheW = canvas.width, ficheH = canvas.height;
+    const {jsPDF} = window.jspdf;
+    let doc;
+    if (pdfTemplateFile) {
+      pdfjsLib.GlobalWorkerOptions.workerSrc = 'https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.worker.min.js';
+      const ab = await pdfTemplateFile.arrayBuffer();
+      const pdf0 = await pdfjsLib.getDocument({data:ab}).promise;
+      const p1 = await pdf0.getPage(1);
+      const vp = p1.getViewport({scale:3});
+      const offC = document.createElement('canvas');
+      offC.width=vp.width; offC.height=vp.height;
+      await p1.render({canvasContext:offC.getContext('2d'),viewport:vp}).promise;
+      const tplImg = offC.toDataURL('image/jpeg', 0.92);
+      const origVp = p1.getViewport({scale:1});
+      const pW=origVp.width*0.352777, pH=origVp.height*0.352777, M=12;
+      doc = new jsPDF({orientation:pH>pW?'portrait':'landscape',unit:'mm',format:[pW,pH]});
+      doc.addImage(tplImg,'JPEG',0,0,pW,pH);
+      const drawW=pW-M*2, drawH=drawW*(ficheH/ficheW);
+      const startY=Math.max(M,(pH-drawH)/2);
+      doc.addImage(imgData,'JPEG',M,startY,drawW,Math.min(drawH,pH-startY-M));
+    } else {
+      const M=10, drawW=190, drawH=drawW*(ficheH/ficheW);
+      doc = new jsPDF({orientation:'portrait',unit:'mm',format:'a4'});
+      if (drawH <= 277) {
+        doc.addImage(imgData,'JPEG',M,M,drawW,drawH);
+      } else {
+        const ratio = 277/drawH;
+        doc.addImage(imgData,'JPEG',M,M,drawW*ratio,277);
+      }
+    }
+    const safe=playerName.replace(/[^a-z0-9]/gi,'_').toLowerCase();
+    doc.save('CR_'+safe+'_'+new Date().toISOString().slice(0,10)+'.pdf');
+    btn.textContent = oldTxt;
+    btn.disabled = false;
+  } catch(err) {
+    btn.textContent = oldTxt;
+    btn.disabled = false;
+    document.getElementById('errorBox').innerHTML = 'Erreur export PDF : ' + err.message;
+    document.getElementById('errorBox').style.display = 'block';
+  }
 }
 
 function copyTranscript(){
@@ -669,9 +737,59 @@ function showTranscript(){
   document.getElementById('transcriptArea').scrollIntoView({behavior:'smooth'});
 }
 
+let pdfTemplateFile = null;
+
+function handleTemplate(input) {
+  const f = input.files[0]; if (!f) return;
+  pdfTemplateFile = f;
+  document.getElementById('pdfInfo').style.display = 'flex';
+  document.getElementById('pdfName').textContent = f.name;
+  document.getElementById('pdfSize').textContent = (f.size/1024/1024).toFixed(2) + ' Mo';
+  previewTemplate(f);
+}
+
+async function previewTemplate(file) {
+  try {
+    pdfjsLib.GlobalWorkerOptions.workerSrc = 'https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.worker.min.js';
+    const ab = await file.arrayBuffer();
+    const pdf = await pdfjsLib.getDocument({data:ab}).promise;
+    const page = await pdf.getPage(1);
+    const vp = page.getViewport({scale:1.2});
+    const canvas = document.getElementById('templateCanvas');
+    canvas.width=vp.width; canvas.height=vp.height;
+    await page.render({canvasContext:canvas.getContext('2d'),viewport:vp}).promise;
+    document.getElementById('templatePreview').style.display = 'block';
+    document.getElementById('tpInfo').textContent = pdf.numPages + ' page(s) · Aperçu page 1';
+  } catch(e) {
+    document.getElementById('tpInfo').textContent = 'Aperçu non disponible.';
+    document.getElementById('templatePreview').style.display = 'block';
+  }
+}
+
+// Drag & drop PDF template
+const dp = document.getElementById('dropPDF');
+if (dp) {
+  dp.addEventListener('dragover',e=>{e.preventDefault();dp.classList.add('drag')});
+  dp.addEventListener('dragleave',()=>dp.classList.remove('drag'));
+  dp.addEventListener('drop',e=>{
+    e.preventDefault();dp.classList.remove('drag');
+    const f=e.dataTransfer.files[0];
+    if(f&&f.name.toLowerCase().endsWith('.pdf')){
+      pdfTemplateFile=f;
+      document.getElementById('pdfInfo').style.display='flex';
+      document.getElementById('pdfName').textContent=f.name;
+      document.getElementById('pdfSize').textContent=(f.size/1024/1024).toFixed(2)+' Mo';
+      previewTemplate(f);
+    }
+  });
+}
+
 function resetAll(){
-  audioFile=null;transcriptText='';
+  audioFile=null;transcriptText='';pdfTemplateFile=null;
   document.getElementById('audioFile').value='';
+  document.getElementById('pdfTemplate').value='';
+  document.getElementById('pdfInfo').style.display='none';
+  document.getElementById('templatePreview').style.display='none';
   document.getElementById('audioInfo').style.display='none';
   document.getElementById('transcriptArea').classList.remove('on');
   document.getElementById('ficheArea').classList.remove('on');
