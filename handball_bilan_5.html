@@ -1,0 +1,1141 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>HandballAI — Compte rendu d'entretien</title>
+<link href="https://fonts.googleapis.com/css2?family=Syne:wght@400;600;700&family=Inter:wght@300;400;500&display=swap" rel="stylesheet">
+<script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+<style>
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+:root{
+  /* Interface app (sombre) */
+  --bg:#0f1117;--surface:#1a1d27;--surface2:#222636;--surface3:#2a2f45;
+  --border:#2e3348;--border2:#3d4460;
+  --accent:#e8533a;--accent2:#f2845a;
+  --accent-bg:rgba(232,83,58,0.08);
+  --text:#f0f2f8;--text2:#9aa0be;--text3:#5a607e;
+  --success:#3db87a;--success-bg:rgba(61,184,122,0.1);--success-border:rgba(61,184,122,0.3);
+  --warn:#f0a030;--warn-bg:rgba(240,160,48,0.1);--warn-border:rgba(240,160,48,0.3);
+  --info:#4a9edd;--info-bg:rgba(74,158,221,0.1);--info-border:rgba(74,158,221,0.3);
+  --r:10px;--r2:6px;--r3:4px;
+
+  /* Fiche visuelle style Plaud (clair) */
+  --f-bg:#f5f4f0;
+  --f-surface:#ffffff;
+  --f-surface2:#f0efe9;
+  --f-surface3:#e8e6df;
+  --f-border:#e2dfd6;
+  --f-border2:#ccc9be;
+  --f-text:#1a1916;
+  --f-text2:#5a5850;
+  --f-text3:#9a9890;
+  --f-accent:#3d5a8a;
+  --f-accent-bg:#edf2f9;
+  --f-accent-border:#c5d4ea;
+  --f-green:#2d7d52;
+  --f-green-bg:#eaf4ee;
+  --f-green-border:#b8dfc8;
+  --f-orange:#b85c1a;
+  --f-orange-bg:#fdf0e6;
+  --f-orange-border:#f0c9a0;
+  --f-blue:#1e5fa8;
+  --f-blue-bg:#e8f0fa;
+  --f-blue-border:#b0caf0;
+  --f-red:#a83232;
+  --f-red-bg:#faeaea;
+  --f-red-border:#f0b0b0;
+}
+body{font-family:'Inter',sans-serif;background:var(--bg);color:var(--text);min-height:100vh;font-size:14px;line-height:1.6}
+header{background:var(--surface);border-bottom:1px solid var(--border);padding:0 2rem;height:60px;display:flex;align-items:center;justify-content:space-between;position:sticky;top:0;z-index:100}
+.logo{display:flex;align-items:center;gap:12px}
+.logo-badge{width:34px;height:34px;background:var(--accent);border-radius:8px;display:flex;align-items:center;justify-content:center;font-family:'Syne',sans-serif;font-size:16px;font-weight:700;color:white}
+.logo-name{font-family:'Syne',sans-serif;font-size:17px;font-weight:600;letter-spacing:-0.3px}
+.logo-sub{font-size:11px;color:var(--text2)}
+.free-badge{font-size:10px;font-weight:600;padding:3px 9px;border-radius:20px;background:rgba(61,184,122,0.15);color:var(--success);border:1px solid var(--success-border)}
+
+main{max-width:860px;margin:0 auto;padding:2rem 1.25rem}
+
+/* STEPS */
+.steps{display:flex;gap:0;margin-bottom:2.5rem;position:relative}
+.steps::before{content:'';position:absolute;top:15px;left:15px;right:15px;height:2px;background:var(--border)}
+.step{flex:1;text-align:center;position:relative;z-index:1}
+.step-dot{width:32px;height:32px;border-radius:50%;border:2px solid var(--border);background:var(--surface);display:flex;align-items:center;justify-content:center;margin:0 auto 6px;font-size:12px;font-weight:600;color:var(--text3);transition:all .3s}
+.step.active .step-dot{border-color:var(--accent);color:var(--accent);background:var(--accent-bg)}
+.step.done .step-dot{border-color:var(--success);background:var(--success);color:white}
+.step-label{font-size:11px;color:var(--text3);font-weight:500}
+.step.active .step-label{color:var(--accent)}
+.step.done .step-label{color:var(--success)}
+
+/* PANELS */
+.panel{background:var(--surface);border:1px solid var(--border);border-radius:var(--r);padding:1.5rem;margin-bottom:1rem}
+.panel-label{font-size:10px;font-weight:600;letter-spacing:1.2px;text-transform:uppercase;color:var(--text3);margin-bottom:1.25rem;display:flex;align-items:center;gap:8px}
+.panel-label::after{content:'';flex:1;height:1px;background:var(--border)}
+
+input[type="text"]{width:100%;padding:11px 14px;background:var(--surface2);border:1px solid var(--border2);border-radius:var(--r2);color:var(--text);font-family:'Inter',sans-serif;font-size:15px;outline:none;transition:border-color .15s}
+input:focus{border-color:var(--accent);box-shadow:0 0 0 3px rgba(232,83,58,0.12)}
+input::placeholder{color:var(--text3)}
+
+.upload-box{border:1.5px dashed var(--border2);border-radius:var(--r);padding:1.5rem 1rem;text-align:center;cursor:pointer;transition:all .2s;background:var(--surface2);position:relative;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:8px;min-height:120px}
+.upload-box:hover,.upload-box.drag{border-color:var(--accent);background:var(--accent-bg)}
+.upload-box input{position:absolute;inset:0;opacity:0;cursor:pointer;width:100%;height:100%}
+.upload-box svg{width:24px;height:24px;stroke:var(--accent);fill:none;stroke-width:1.5}
+.upload-box .ub-title{font-size:13px;font-weight:500}
+.upload-box .ub-sub{font-size:11px;color:var(--text3)}
+
+.file-ok{display:flex;align-items:center;gap:10px;padding:10px 12px;background:var(--success-bg);border:1px solid var(--success-border);border-radius:var(--r2);margin-top:8px}
+.file-ok svg{width:16px;height:16px;stroke:var(--success);fill:none;stroke-width:2;flex-shrink:0}
+.file-ok .fn{font-size:13px;font-weight:500;color:var(--success)}
+.file-ok .fs{font-size:11px;color:#5dba8e}
+
+.btn{padding:10px 18px;border-radius:var(--r2);border:none;font-family:'Inter',sans-serif;font-size:13px;font-weight:500;cursor:pointer;transition:all .15s;white-space:nowrap}
+.btn-accent{background:var(--accent);color:white}
+.btn-accent:hover{background:#d4432a}
+.btn-accent:disabled{background:var(--border2);color:var(--text3);cursor:not-allowed}
+.btn-outline{background:transparent;color:var(--text2);border:1px solid var(--border2)}
+.btn-outline:hover{background:var(--surface2);color:var(--text)}
+.btn-ghost{background:var(--accent-bg);color:var(--accent);border:1px solid rgba(232,83,58,0.2)}
+.btn-ghost:hover{background:rgba(232,83,58,0.15)}
+.btn-success{background:var(--success-bg);color:var(--success);border:1px solid var(--success-border)}
+.btn-success:hover{background:rgba(61,184,122,0.18)}
+
+.cta-wrap{text-align:center;margin:1.75rem 0}
+.btn-launch{background:var(--accent);color:white;padding:14px 48px;font-size:16px;font-weight:600;border-radius:var(--r);border:none;cursor:pointer;font-family:'Syne',sans-serif;transition:all .2s}
+.btn-launch:hover{background:#d4432a;transform:translateY(-1px)}
+.btn-launch:disabled{background:var(--border2);color:var(--text3);cursor:not-allowed;transform:none}
+.cta-note{margin-top:8px;font-size:11px;color:var(--text3)}
+
+.progress-panel{display:none}
+.progress-panel.on{display:block}
+.pbar-wrap{height:3px;background:var(--border2);border-radius:3px;overflow:hidden;margin:1rem 0 .5rem}
+.pbar{height:100%;background:var(--accent);border-radius:3px;transition:width .4s ease;width:0%}
+.plabel{font-size:13px;color:var(--text2);display:flex;align-items:center;gap:8px}
+.spin{width:13px;height:13px;border:2px solid var(--border2);border-top-color:var(--accent);border-radius:50%;animation:rot .7s linear infinite;flex-shrink:0}
+@keyframes rot{to{transform:rotate(360deg)}}
+
+.error-box{padding:12px 14px;background:rgba(232,83,58,.1);border:1px solid rgba(232,83,58,.3);border-radius:var(--r2);font-size:13px;color:var(--accent2);display:none;margin-bottom:1rem;line-height:1.6}
+
+/* TRANSCRIPT */
+.transcript-area{display:none}
+.transcript-area.on{display:block}
+.transcript-box{background:var(--surface2);border:1px solid var(--border);border-radius:var(--r2);padding:1.25rem;max-height:300px;overflow-y:auto;font-size:13px;line-height:1.8;color:var(--text2);white-space:pre-wrap;font-family:'Inter',sans-serif}
+.transcript-actions{display:flex;gap:8px;margin-top:10px;flex-wrap:wrap}
+
+/* FICHE VISUELLE style Plaud */
+.fiche-area{display:none}
+.fiche-area.on{display:block}
+.fiche-area *{font-family:'Inter',sans-serif}
+
+.fiche-wrap{background:var(--f-bg);border-radius:var(--r);padding:1.5rem;border:1px solid var(--f-border)}
+
+.fiche-grid{display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-bottom:12px}
+.fiche-card{background:var(--f-surface);border:1px solid var(--f-border);border-radius:var(--r);padding:1.25rem;position:relative;transition:border-color .15s}
+.fiche-card:hover{border-color:var(--f-border2)}
+.fiche-card.full{grid-column:1 / -1}
+.fiche-card-title{font-size:10px;font-weight:600;letter-spacing:1px;text-transform:uppercase;color:var(--f-text3);margin-bottom:12px;display:flex;align-items:center;justify-content:space-between}
+.edit-btn{font-size:10px;padding:2px 8px;border-radius:var(--r3);background:var(--f-surface2);color:var(--f-text3);border:1px solid var(--f-border);cursor:pointer;font-family:'Inter',sans-serif;transition:all .15s}
+.edit-btn:hover{color:var(--f-text);background:var(--f-surface3)}
+
+.fiche-header{background:var(--f-surface);border:1px solid var(--f-border);border-radius:var(--r);padding:1.25rem 1.5rem;margin-bottom:12px;display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:10px}
+.fiche-player{display:flex;align-items:center;gap:14px}
+.fiche-avatar{width:46px;height:46px;border-radius:50%;background:var(--f-accent-bg);border:2px solid var(--f-accent-border);display:flex;align-items:center;justify-content:center;font-family:'Syne',sans-serif;font-size:17px;font-weight:700;color:var(--f-accent)}
+.fiche-player-name{font-family:'Syne',sans-serif;font-size:20px;font-weight:700;color:var(--f-text)}
+.fiche-player-sub{font-size:12px;color:var(--f-text2);margin-top:2px}
+.decision-badge{display:inline-flex;align-items:center;gap:6px;padding:6px 16px;border-radius:20px;font-size:13px;font-weight:500}
+.decision-badge.reconduit{background:var(--f-green-bg);color:var(--f-green);border:1px solid var(--f-green-border)}
+.decision-badge.fin{background:var(--f-red-bg);color:var(--f-red);border:1px solid var(--f-red-border)}
+.decision-badge.neutre{background:var(--f-blue-bg);color:var(--f-blue);border:1px solid var(--f-blue-border)}
+
+.stat-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(140px,1fr));gap:8px;margin-bottom:12px}
+.stat-card{background:var(--f-surface);border:1px solid var(--f-border);border-radius:var(--r2);padding:10px 14px}
+.stat-label{font-size:11px;color:var(--f-text3);margin-bottom:4px;text-transform:uppercase;letter-spacing:0.5px}
+.stat-value{font-size:14px;font-weight:500;color:var(--f-text)}
+.stat-value.success{color:var(--f-green)}
+.stat-value.warn{color:var(--f-orange)}
+.stat-value.info{color:var(--f-blue)}
+
+.point-item{display:flex;gap:10px;padding:9px 0;border-bottom:1px solid var(--f-border)}
+.point-item:last-child{border-bottom:none;padding-bottom:0}
+.point-dot{width:7px;height:7px;border-radius:50%;flex-shrink:0;margin-top:5px}
+.point-dot.success{background:var(--f-green)}
+.point-dot.warn{background:var(--f-orange)}
+.point-dot.info{background:var(--f-blue)}
+.point-content{flex:1}
+.point-title{font-size:13px;font-weight:500;margin-bottom:2px;color:var(--f-text)}
+.point-desc{font-size:12px;color:var(--f-text2);line-height:1.6}
+
+.decision-item{display:flex;gap:10px;padding:9px 12px;background:var(--f-surface2);border-radius:var(--r2);margin-bottom:6px;align-items:flex-start;border:1px solid var(--f-border)}
+.decision-item:last-child{margin-bottom:0}
+.decision-tag{font-size:10px;font-weight:600;padding:2px 9px;border-radius:var(--r3);white-space:nowrap;margin-top:1px}
+.tag-decided{background:var(--f-green-bg);color:var(--f-green);border:1px solid var(--f-green-border)}
+.tag-action{background:var(--f-orange-bg);color:var(--f-orange);border:1px solid var(--f-orange-border)}
+.tag-obj{background:var(--f-blue-bg);color:var(--f-blue);border:1px solid var(--f-blue-border)}
+.decision-text{font-size:13px;line-height:1.5;color:var(--f-text)}
+
+[contenteditable]{outline:none;cursor:text;border-radius:var(--r3);transition:background .15s;color:inherit}
+[contenteditable]:focus{background:var(--f-surface3);box-shadow:0 0 0 2px rgba(61,90,138,0.15);padding:2px 4px;margin:-2px -4px}
+[contenteditable]:hover{background:var(--f-surface2)}
+
+#ficheContext{font-size:13px;line-height:1.75;color:var(--f-text2);min-height:60px;padding:4px}
+
+.fiche-actions{display:flex;gap:8px;margin-top:1rem;flex-wrap:wrap}
+.divider{height:1px;background:var(--border);margin:1.25rem 0}
+
+/* Print */
+@media print{
+  header,.steps,.panel,.upload-box,.file-ok,.cta-wrap,.progress-panel,.transcript-area,.fiche-actions,.edit-btn{display:none!important}
+  body{background:white;font-size:10pt}
+  .fiche-area{display:block!important}
+  .fiche-wrap{background:#f5f4f0;padding:1rem;border:none}
+  .fiche-card{border-color:#e2dfd6;background:white}
+  .fiche-header{border-color:#e2dfd6;background:white}
+  .stat-card{border-color:#e2dfd6;background:white}
+  [contenteditable]{cursor:default}
+  .decision-item{background:#f0efe9}
+}
+
+@media(max-width:600px){
+  .fiche-grid{grid-template-columns:1fr}
+  .fiche-card.full{grid-column:1}
+  main{padding:1.5rem 1rem}
+  header{padding:0 1rem}
+}
+</style>
+</head>
+<body>
+
+<header>
+  <div class="logo">
+    <div class="logo-badge">H</div>
+    <div>
+      <div class="logo-name">HandballAI</div>
+      <div class="logo-sub">Compte rendu d'entretien</div>
+    </div>
+  </div>
+  <span class="free-badge">✦ Gratuit</span>
+</header>
+
+<main>
+
+  <div class="steps">
+    <div class="step active" id="s1"><div class="step-dot">1</div><div class="step-label">Configurer</div></div>
+    <div class="step" id="s2"><div class="step-dot">2</div><div class="step-label">Transcrire</div></div>
+    <div class="step" id="s3"><div class="step-dot">3</div><div class="step-label">Analyser</div></div>
+    <div class="step" id="s4"><div class="step-dot">4</div><div class="step-label">Modifier & exporter</div></div>
+  </div>
+
+  <!-- ETAPE 1 : Infos -->
+  <div class="panel" id="panelConfig">
+    <div class="panel-label">Identité du joueur</div>
+    <input type="text" id="playerName" placeholder="Nom complet du joueur (ex : Hugo Martin)" oninput="checkReady()">
+  </div>
+
+  <div class="panel">
+    <div class="panel-label">Fichier audio</div>
+    <div class="upload-box" id="dropAudio">
+      <input type="file" id="audioFile" accept=".m4a,.mp3,.wav,.aac,.ogg,.flac,.mp4,.webm" onchange="handleAudio(this)">
+      <svg viewBox="0 0 24 24"><path d="M9 18V5l12-2v13M9 18c0 1.1-.9 2-2 2s-2-.9-2-2 .9-2 2-2 2 .9 2 2zM21 16c0 1.1-.9 2-2 2s-2-.9-2-2 .9-2 2-2 2 .9 2 2z"/></svg>
+      <div class="ub-title">Audio de l'entretien</div>
+      <div class="ub-sub">M4A iPhone, MP3, WAV… (max 25 Mo)</div>
+    </div>
+    <div id="audioInfo" style="display:none" class="file-ok">
+      <svg viewBox="0 0 24 24"><polyline points="20 6 9 17 4 12"/></svg>
+      <div><div class="fn" id="audioName"></div><div class="fs" id="audioSize"></div></div>
+    </div>
+  </div>
+
+  <div class="cta-wrap">
+    <button class="btn-launch" id="btnTranscribe" onclick="startTranscription()" disabled>Transcrire l'audio</button>
+    <div class="cta-note">Étape 1 — Transcription fidèle par Groq Whisper</div>
+  </div>
+
+  <!-- PROGRESS -->
+  <div class="panel progress-panel" id="progressPanel">
+    <div class="panel-label" id="progressTitle">Transcription en cours</div>
+    <div class="pbar-wrap"><div class="pbar" id="pbar"></div></div>
+    <div class="plabel"><div class="spin"></div><span id="plabel">Initialisation…</span></div>
+  </div>
+
+  <div class="error-box" id="errorBox"></div>
+
+  <!-- ETAPE 2 : TRANSCRIPT -->
+  <div class="transcript-area" id="transcriptArea">
+    <div class="panel">
+      <div class="panel-label">Transcription complète</div>
+      <div class="transcript-box" id="transcriptBox"></div>
+      <div class="transcript-actions">
+        <button class="btn btn-outline" onclick="copyTranscript()">Copier la transcription</button>
+        <button class="btn btn-launch" style="padding:10px 28px;font-size:14px" onclick="startAnalysis()">Générer le compte rendu visuel →</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- ETAPE 3 : FICHE VISUELLE -->
+  <div class="fiche-area" id="ficheArea">
+  <div class="fiche-wrap">
+
+    <!-- HEADER -->
+    <div class="fiche-header" id="ficheHeader">
+      <div class="fiche-player">
+        <div class="fiche-avatar" id="ficheAvatar">?</div>
+        <div>
+          <div class="fiche-player-name" id="fichePlayerName" contenteditable="true">—</div>
+          <div class="fiche-player-sub" id="fichePlayerSub" contenteditable="true">—</div>
+        </div>
+      </div>
+      <div id="ficheDecision" class="decision-badge neutre" contenteditable="true">—</div>
+    </div>
+
+    <!-- STATS -->
+    <div class="stat-grid" id="ficheStats"></div>
+
+    <!-- GRILLE -->
+    <div class="fiche-grid">
+
+      <div class="fiche-card">
+        <div class="fiche-card-title">Points forts <span class="edit-btn" onclick="addPoint('strengths','success')">+ Ajouter</span></div>
+        <div id="strengths"></div>
+      </div>
+
+      <div class="fiche-card">
+        <div class="fiche-card-title">Points d'attention <span class="edit-btn" onclick="addPoint('warnings','warn')">+ Ajouter</span></div>
+        <div id="warnings"></div>
+      </div>
+
+      <div class="fiche-card full">
+        <div class="fiche-card-title">Contexte & échanges clés <span class="edit-btn" onclick="focusEdit('ficheContext')">Modifier</span></div>
+        <div id="ficheContext" contenteditable="true" style="font-size:13px;line-height:1.7;color:var(--text2);min-height:60px"></div>
+      </div>
+
+      <div class="fiche-card full">
+        <div class="fiche-card-title">Relevé de décisions <span class="edit-btn" onclick="addDecision()">+ Ajouter</span></div>
+        <div id="decisions"></div>
+      </div>
+
+    </div>
+
+    <div class="fiche-actions">
+      <button class="btn btn-outline" onclick="resetAll()">Nouvel entretien</button>
+      <button class="btn btn-outline" onclick="copyTranscript()">Revoir la transcription</button>
+      <button class="btn btn-success" onclick="exportPDF()">Exporter PDF</button>
+    </div>
+
+  </div>
+  </div>
+
+</main>
+
+<script>
+const GROQ_KEY = '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';
+const CLAUDE_KEY = 'NONE'; // pas nécessaire, on utilise l'API Anthropic via fetch
+
+let audioFile = null, playerName = '', transcriptText = '';
+const now = new Date();
+
+function handleAudio(input) {
+  const f = input.files[0]; if (!f) return;
+  audioFile = f;
+  document.getElementById('audioInfo').style.display = 'flex';
+  document.getElementById('audioName').textContent = f.name;
+  document.getElementById('audioSize').textContent = (f.size/1024/1024).toFixed(2) + ' Mo';
+  checkReady();
+}
+
+function checkReady() {
+  const name = document.getElementById('playerName').value.trim();
+  document.getElementById('btnTranscribe').disabled = !(audioFile && name);
+}
+
+function setProgress(pct, label, title) {
+  document.getElementById('pbar').style.width = pct + '%';
+  document.getElementById('plabel').textContent = label;
+  if (title) document.getElementById('progressTitle').textContent = title;
+}
+
+function showError(msg) {
+  const eb = document.getElementById('errorBox');
+  eb.innerHTML = msg; eb.style.display = 'block';
+}
+
+function setStep(n) {
+  for (let i = 1; i <= 4; i++) {
+    const el = document.getElementById('s' + i);
+    el.className = 'step' + (i < n ? ' done' : i === n ? ' active' : '');
+    el.querySelector('.step-dot').textContent = i < n ? '✓' : i;
+  }
+}
+
+async function startTranscription() {
+  playerName = document.getElementById('playerName').value.trim();
+  if (!audioFile || !playerName) return;
+  document.getElementById('errorBox').style.display = 'none';
+  document.getElementById('progressPanel').classList.add('on');
+  document.getElementById('btnTranscribe').disabled = true;
+  setStep(2);
+
+  try {
+    setProgress(10, 'Envoi du fichier audio à Whisper…', 'Transcription en cours');
+
+    const formData = new FormData();
+    formData.append('file', audioFile, audioFile.name);
+    formData.append('model', 'whisper-large-v3-turbo');
+    formData.append('language', 'fr');
+    formData.append('response_format', 'verbose_json');
+    formData.append('timestamp_granularities[]', 'segment');
+
+    const res = await fetch('https://api.groq.com/openai/v1/audio/transcriptions', {
+      method: 'POST',
+      headers: { 'Authorization': 'Bearer ' + GROQ_KEY },
+      body: formData
+    });
+
+    if (!res.ok) {
+      const err = await res.json().catch(()=>({}));
+      throw new Error(err.error?.message || 'Erreur transcription ' + res.status);
+    }
+
+    setProgress(70, 'Mise en forme de la transcription…');
+    const data = await res.json();
+
+    // Format transcript with timestamps and speakers
+    if (data.segments) {
+      transcriptText = data.segments.map(s => {
+        const t = Math.floor(s.start);
+        const mm = String(Math.floor(t/60)).padStart(2,'0');
+        const ss = String(t%60).padStart(2,'0');
+        return `[${mm}:${ss}] ${s.text.trim()}`;
+      }).join('\n');
+    } else {
+      transcriptText = data.text || '';
+    }
+
+    setProgress(100, 'Transcription terminée !');
+    setTimeout(() => {
+      document.getElementById('progressPanel').classList.remove('on');
+      document.getElementById('transcriptArea').classList.add('on');
+      document.getElementById('transcriptBox').textContent = transcriptText;
+      setStep(3);
+    }, 400);
+
+  } catch(err) {
+    document.getElementById('progressPanel').classList.remove('on');
+    document.getElementById('btnTranscribe').disabled = false;
+    setStep(1);
+    let msg = err.message || 'Erreur inconnue';
+    if (msg.includes('413') || msg.includes('large')) msg = 'Fichier trop volumineux (max 25 Mo).';
+    else if (msg.includes('429')) msg = 'Trop de requêtes, attendez quelques secondes.';
+    showError(msg);
+  }
+}
+
+async function startAnalysis() {
+  document.getElementById('errorBox').style.display = 'none';
+  document.getElementById('progressPanel').classList.add('on');
+  setStep(3);
+
+  try {
+    setProgress(10, 'Analyse de la transcription par l\'IA…', 'Génération du compte rendu');
+
+    const dateStr = now.toLocaleDateString('fr-FR', {day:'numeric', month:'long', year:'numeric'});
+    const firstName = playerName.split(' ')[0];
+
+    const prompt = `Tu es expert en formation handball. Analyse cette transcription d'entretien avec ${playerName} et génère un compte rendu structuré en JSON.
+
+TRANSCRIPTION :
+${transcriptText}
+
+Génère un objet JSON avec exactement cette structure (sans markdown, juste le JSON brut) :
+{
+  "playerSub": "poste/catégorie/club si mentionnés, sinon 'Joueur · Pôle Espoirs'",
+  "decision": "texte court de la décision principale (ex: Reconduit en structure, Fin de parcours, etc.)",
+  "decisionType": "reconduit|fin|neutre",
+  "stats": [
+    {"label": "...", "value": "...", "color": "success|warn|info|default"},
+    ...max 4 stats extraites de l'entretien
+  ],
+  "strengths": [
+    {"title": "...", "desc": "... (2-3 lignes issues des propos réels)"},
+    ...3 à 5 points forts
+  ],
+  "warnings": [
+    {"title": "...", "desc": "... (2-3 lignes issues des propos réels)"},
+    ...3 à 5 points d'attention
+  ],
+  "context": "Paragraphe de 4 à 6 lignes qui restitue le contexte et les échanges clés de l'entretien, en citant les propos significatifs.",
+  "decisions": [
+    {"tag": "decided|action|objective", "text": "..."},
+    ...toutes les décisions et engagements pris
+  ]
+}`;
+
+    const res = await fetch('https://api.groq.com/openai/v1/chat/completions', {
+      method: 'POST',
+      headers: {
+        'Authorization': 'Bearer ' + GROQ_KEY,
+        'Content-Type': 'application/json'
+      },
+      body: JSON.stringify({
+        model: 'llama-3.3-70b-versatile',
+        temperature: 0.3,
+        max_tokens: 3000,
+        messages: [
+          { role: 'system', content: 'Tu es un assistant expert. Tu réponds UNIQUEMENT en JSON valide, sans markdown, sans texte avant ou après.' },
+          { role: 'user', content: prompt }
+        ]
+      })
+    });
+
+    if (!res.ok) {
+      const err = await res.json().catch(()=>({}));
+      throw new Error(err.error?.message || 'Erreur analyse ' + res.status);
+    }
+
+    setProgress(80, 'Construction de la fiche…');
+    const data = await res.json();
+    let raw = data.choices?.[0]?.message?.content?.trim() || '';
+
+    // Clean potential markdown fences
+    raw = raw.replace(/^```json\s*/,'').replace(/^```\s*/,'').replace(/```\s*$/,'').trim();
+
+    let parsed;
+    try { parsed = JSON.parse(raw); }
+    catch(e) { throw new Error('Réponse IA mal formée. Réessayez.'); }
+
+    setProgress(100, 'Compte rendu généré !');
+    setTimeout(() => {
+      document.getElementById('progressPanel').classList.remove('on');
+      renderFiche(parsed, firstName);
+      setStep(4);
+    }, 400);
+
+  } catch(err) {
+    document.getElementById('progressPanel').classList.remove('on');
+    showError('Erreur analyse : ' + err.message);
+  }
+}
+
+function renderFiche(data, firstName) {
+  // Header
+  document.getElementById('ficheAvatar').textContent = firstName[0].toUpperCase();
+  document.getElementById('fichePlayerName').textContent = playerName;
+  document.getElementById('fichePlayerSub').textContent = data.playerSub || 'Joueur · Pôle Espoirs';
+
+  const decEl = document.getElementById('ficheDecision');
+  decEl.textContent = data.decision || '—';
+  decEl.className = 'decision-badge ' + (data.decisionType || 'neutre');
+
+  // Stats
+  const statsEl = document.getElementById('ficheStats');
+  statsEl.innerHTML = '';
+  const dateStatHTML = `<div class="stat-card"><div class="stat-label">Date</div><div class="stat-value">${now.toLocaleDateString('fr-FR',{day:'numeric',month:'long',year:'numeric'})}</div></div>`;
+  statsEl.innerHTML = dateStatHTML;
+  (data.stats || []).forEach(s => {
+    const colClass = s.color === 'success' ? 'success' : s.color === 'warn' ? 'warn' : s.color === 'info' ? 'info' : '';
+    statsEl.innerHTML += `<div class="stat-card"><div class="stat-label">${s.label}</div><div class="stat-value ${colClass}">${s.value}</div></div>`;
+  });
+
+  // Points forts
+  const strEl = document.getElementById('strengths');
+  strEl.innerHTML = '';
+  (data.strengths || []).forEach(p => strEl.appendChild(makePoint(p, 'success')));
+
+  // Points attention
+  const warnEl = document.getElementById('warnings');
+  warnEl.innerHTML = '';
+  (data.warnings || []).forEach(p => warnEl.appendChild(makePoint(p, 'warn')));
+
+  // Contexte
+  document.getElementById('ficheContext').textContent = data.context || '';
+
+  // Décisions
+  const decisEl = document.getElementById('decisions');
+  decisEl.innerHTML = '';
+  (data.decisions || []).forEach(d => decisEl.appendChild(makeDecision(d)));
+
+  document.getElementById('ficheArea').classList.add('on');
+  document.getElementById('ficheArea').scrollIntoView({behavior:'smooth', block:'start'});
+}
+
+function makePoint(p, type) {
+  const div = document.createElement('div');
+  div.className = 'point-item';
+  div.innerHTML = `<div class="point-dot ${type}"></div><div class="point-content"><div class="point-title" contenteditable="true">${p.title}</div><div class="point-desc" contenteditable="true">${p.desc}</div></div><div style="cursor:pointer;color:var(--text3);font-size:16px;padding:0 4px;line-height:1" onclick="this.closest('.point-item').remove()" title="Supprimer">×</div>`;
+  return div;
+}
+
+function makeDecision(d) {
+  const tagClass = d.tag === 'decided' ? 'tag-decided' : d.tag === 'action' ? 'tag-action' : 'tag-obj';
+  const tagLabel = d.tag === 'decided' ? 'Décidé' : d.tag === 'action' ? 'Action' : 'Objectif';
+  const div = document.createElement('div');
+  div.className = 'decision-item';
+  div.innerHTML = `<span class="decision-tag ${tagClass}">${tagLabel}</span><div class="decision-text" contenteditable="true" style="flex:1">${d.text}</div><div style="cursor:pointer;color:var(--text3);font-size:16px;padding:0 4px;line-height:1;margin-left:4px" onclick="this.closest('.decision-item').remove()" title="Supprimer">×</div>`;
+  return div;
+}
+
+function addPoint(containerId, type) {
+  const el = document.getElementById(containerId);
+  el.appendChild(makePoint({title:'Nouveau point', desc:'Cliquez pour modifier...'}, type));
+}
+
+function addDecision() {
+  const el = document.getElementById('decisions');
+  el.appendChild(makeDecision({tag:'action', text:'Cliquez pour modifier...'}));
+}
+
+function focusEdit(id) {
+  const el = document.getElementById(id);
+  el.focus();
+  const range = document.createRange();
+  range.selectNodeContents(el);
+  window.getSelection().removeAllRanges();
+  window.getSelection().addRange(range);
+}
+
+function copyTranscript() {
+  navigator.clipboard.writeText(transcriptText).then(() => {
+    const b = event.target; const old = b.textContent;
+    b.textContent = 'Copié !';
+    setTimeout(()=>b.textContent=old, 2000);
+  });
+}
+
+function resetAll() {
+  audioFile = null; transcriptText = '';
+  document.getElementById('audioFile').value = '';
+  document.getElementById('audioInfo').style.display = 'none';
+  document.getElementById('transcriptArea').classList.remove('on');
+  document.getElementById('ficheArea').classList.remove('on');
+  document.getElementById('progressPanel').classList.remove('on');
+  document.getElementById('errorBox').style.display = 'none';
+  document.getElementById('playerName').value = '';
+  document.getElementById('btnTranscribe').disabled = true;
+  setStep(1);
+  window.scrollTo({top:0, behavior:'smooth'});
+}
+
+// Drag & drop
+const da = document.getElementById('dropAudio');
+da.addEventListener('dragover', e => {e.preventDefault();da.classList.add('drag')});
+da.addEventListener('dragleave', ()=>da.classList.remove('drag'));
+da.addEventListener('drop', e => {
+  e.preventDefault(); da.classList.remove('drag');
+  const f = e.dataTransfer.files[0]; if (!f) return;
+  audioFile = f;
+  document.getElementById('audioInfo').style.display = 'flex';
+  document.getElementById('audioName').textContent = f.name;
+  document.getElementById('audioSize').textContent = (f.size/1024/1024).toFixed(2)+' Mo';
+  checkReady();
+});
+
+function exportPDF() {
+  const {jsPDF} = window.jspdf;
+  const doc = new jsPDF({orientation:'portrait', unit:'mm', format:'a4'});
+  const W=210, H=297, M=14, CW=W-M*2;
+
+  // Plaud palette
+  const WHITE=[255,255,255], BG=[248,248,252];
+  const BORDER=[229,229,240], BORDER2=[210,215,235];
+  const TEXT=[22,22,38], TEXT2=[80,82,110], TEXT3=[155,158,185];
+  const BLUE=[59,100,180], BLUE_BG=[232,238,252], BLUE_BORDER=[190,210,245];
+  const LAVENDER_BG=[235,238,252], LAVENDER_BORDER=[200,210,245];
+  const GREEN=[40,130,80], GREEN_BG=[230,248,238], GREEN_BORDER=[170,220,195];
+  const ORANGE=[180,100,20], ORANGE_BG=[255,243,225], ORANGE_BORDER=[240,200,140];
+  const RED=[170,50,50], RED_BG=[252,232,232], RED_BORDER=[235,180,180];
+  const TEAL=[30,140,160], TEAL_BG=[225,248,252], TEAL_BORDER=[160,220,235];
+
+  const fr = (x,y,w,h,c,r)=>{ doc.setFillColor(...c); r?doc.roundedRect(x,y,w,h,r,r,'F'):doc.rect(x,y,w,h,'F'); };
+  const sr = (x,y,w,h,c,lw,r)=>{ doc.setDrawColor(...c); doc.setLineWidth(lw||0.25); r?doc.roundedRect(x,y,w,h,r,r,'S'):doc.rect(x,y,w,h,'S'); };
+  const fsr = (x,y,w,h,fc,sc,lw,r)=>{ doc.setFillColor(...fc); doc.setDrawColor(...sc); doc.setLineWidth(lw||0.25); r?doc.roundedRect(x,y,w,h,r,r,'FD'):doc.rect(x,y,w,h,'FD'); };
+  const sf = (style,size,color)=>{ doc.setFont('helvetica',style); doc.setFontSize(size); doc.setTextColor(...(color||TEXT)); };
+  const tw = t=>doc.getTextWidth(t);
+
+  // Data from DOM
+  const pName = document.getElementById('fichePlayerName').textContent.trim();
+  const pSub = document.getElementById('fichePlayerSub').textContent.trim();
+  const pInit = pName[0].toUpperCase();
+  const decText = document.getElementById('ficheDecision').textContent.trim();
+  const decType = document.getElementById('ficheDecision').className.replace('decision-badge ','');
+  const ctx = document.getElementById('ficheContext').textContent.trim();
+  const stats=[], strengths=[], warnings=[], decisions=[];
+  document.querySelectorAll('#ficheStats .stat-card').forEach(s=>{
+    stats.push({label:s.querySelector('.stat-label').textContent.trim(), value:s.querySelector('.stat-value').textContent.trim(),
+    color:s.querySelector('.stat-value').className.includes('success')?'g':s.querySelector('.stat-value').className.includes('warn')?'o':s.querySelector('.stat-value').className.includes('info')?'b':'d'});
+  });
+  document.querySelectorAll('#strengths .point-item').forEach(p=>strengths.push({title:p.querySelector('.point-title').textContent.trim(),desc:p.querySelector('.point-desc').textContent.trim()}));
+  document.querySelectorAll('#warnings .point-item').forEach(p=>warnings.push({title:p.querySelector('.point-title').textContent.trim(),desc:p.querySelector('.point-desc').textContent.trim()}));
+  document.querySelectorAll('#decisions .decision-item').forEach(d=>{
+    const tc=d.querySelector('.decision-tag').className;
+    decisions.push({tag:tc.includes('decided')?'Décidé':tc.includes('action')?'Action':'Objectif',type:tc.includes('decided')?'d':tc.includes('action')?'a':'o',text:d.querySelector('.decision-text').textContent.trim()});
+  });
+
+  // White background
+  fr(0,0,W,H,WHITE);
+
+  let y=M;
+
+  // === HEADER ===
+  // Tags row (like "Saison 2023-2024")
+  const dateStr = new Date().toLocaleDateString('fr-FR',{day:'numeric',month:'long',year:'numeric'});
+  sf('normal',7,TEXT3);
+  let tagX=M;
+  [dateStr, 'Pôle Espoirs'].forEach(t=>{
+    const tpw=tw(t)+8;
+    fsr(tagX,y-2.5,tpw,5,BG,BORDER,0.25,2);
+    doc.text(t,tagX+4,y+0.5);
+    tagX+=tpw+4;
+  });
+  y+=8;
+
+  // Big title
+  sf('bold',18,TEXT);
+  doc.text(pName, M, y);
+  y+=6;
+  sf('normal',9,TEXT2);
+  doc.text(pSub, M, y);
+  y+=10;
+
+  // === MAIN DECISION BLOCK (large lavender) ===
+  const decBg = decType==='reconduit'?GREEN_BG:decType==='fin'?[235,235,250]:LAVENDER_BG;
+  const decBorder = decType==='reconduit'?GREEN_BORDER:decType==='fin'?LAVENDER_BORDER:LAVENDER_BORDER;
+  const decH = 28;
+  fsr(M, y, CW*0.65-3, decH, decBg, decBorder, 0.3, 3);
+
+  // Decision icon area
+  fsr(M+3, y+3, 10, 10, WHITE, decBorder, 0.3, 2);
+  sf('bold',8,BLUE);
+  doc.text('⊕',M+5,y+10);
+
+  // Decision text
+  sf('bold',11,TEXT);
+  doc.text(decText, M+16, y+10);
+  sf('normal',8,TEXT2);
+  doc.text('Décision principale', M+16, y+16);
+
+  // Sub-blocks inside decision
+  const sub1X=M+3, sub1Y=y+17, subW=(CW*0.65-12)/2;
+  fsr(sub1X,sub1Y,subW,8,WHITE,decBorder,0.2,2);
+  sf('bold',6,TEXT3);
+  doc.text('CONSTAT',sub1X+3,sub1Y+4);
+  sf('normal',7,TEXT2);
+  const decSubLines=doc.splitTextToSize(ctx.slice(0,60)+'...', subW-6);
+  // just show label
+  doc.text(ctx.slice(0,40), sub1X+3, sub1Y+7);
+
+  fsr(sub1X+subW+2,sub1Y,subW,8,WHITE,decBorder,0.2,2);
+  sf('bold',6,TEXT3);
+  doc.text('SUITE',sub1X+subW+5,sub1Y+4);
+  sf('normal',7,TEXT2);
+  const nextDec = decisions.find(d=>d.type==='o');
+  doc.text(nextDec?nextDec.text.slice(0,40):'—', sub1X+subW+5, sub1Y+7);
+
+  // Right block (quotes / neutralité)
+  const rbX=M+CW*0.65, rbW=CW*0.35;
+  fsr(rbX,y,rbW,decH,WHITE,BORDER,0.3,3);
+  sf('bold',8,TEXT2);
+  const firstDec=decisions.find(d=>d.type==='d');
+  const quoteLines=doc.splitTextToSize('"'+(firstDec?firstDec.text:decText)+'"', rbW-8);
+  doc.text(quoteLines,rbX+4,y+8);
+  strengths.slice(0,2).forEach((s,i)=>{
+    sf('normal',7,TEXT2);
+    const sLines=doc.splitTextToSize('• '+s.title,rbW-8);
+    doc.text(sLines,rbX+4,y+16+i*6);
+  });
+
+  y+=decH+4;
+
+  // === TWO COLUMNS: STRENGTHS + WARNINGS ===
+  const colW=CW*0.55, col2X=M+colW+4, col2W=CW-colW-4;
+
+  // Measure
+  const measurePoints=(pts,mw)=>{
+    let h=9;
+    pts.forEach(p=>{
+      doc.setFontSize(8.5); h+=4.5;
+      doc.setFontSize(7); h+=doc.splitTextToSize(p.desc,mw-12).length*3.2+3;
+    });
+    return h;
+  };
+  const col2Wval=CW-colW-4; const sh=measurePoints(strengths,colW), wh=measurePoints(warnings,col2Wval);
+  const ph=Math.max(sh,wh);
+
+  // Strengths
+  fsr(M,y,colW,ph,WHITE,BORDER,0.25,3);
+  sf('bold',8,TEXT);
+  doc.text('Attaque & Points forts', M+5, y+7);
+  sf('normal',6.5,TEXT3);
+  doc.text('ANALYSE', M+colW-5-tw('ANALYSE'), y+7);
+  doc.setDrawColor(...BORDER); doc.setLineWidth(0.2);
+  doc.line(M+4,y+9,M+colW-4,y+9);
+
+  // Progress bars for first 2 strengths
+  const bars=[{label:'Niveau technique',val:0.75},{label:'Niveau défense',val:0.45}];
+  let by=y+12;
+  bars.forEach(b=>{
+    sf('normal',7,TEXT2); doc.text(b.label,M+5,by);
+    const bval=b.val==='acquis'?0.85:0.45;
+    const barW=colW-10, barH=2;
+    fr(M+5,by+1.5,barW,barH,[230,232,245]);
+    fr(M+5,by+1.5,barW*b.val,barH,BLUE);
+    sf('normal',6.5,TEXT3);
+    doc.text(b.val>0.6?'Acquis':'À stabiliser',M+colW-5-tw(b.val>0.6?'Acquis':'À stabiliser'),by);
+    by+=7;
+  });
+
+  let sy=by+2;
+  strengths.forEach((p,i)=>{
+    if(i>0){doc.setDrawColor(...BORDER);doc.setLineWidth(0.15);doc.line(M+4,sy-1,M+colW-4,sy-1);}
+    doc.setFillColor(...GREEN); doc.circle(M+7,sy+1,1,'F');
+    sf('bold',8.5,TEXT); doc.text(p.title,M+11,sy+1.5); sy+=4.5;
+    sf('normal',7,TEXT2);
+    const dl=doc.splitTextToSize(p.desc,colW-14);
+    doc.text(dl,M+11,sy); sy+=dl.length*3.2+3;
+  });
+
+  // Warnings
+  fsr(col2X,y,colW,ph,WHITE,BORDER,0.25,3);
+  sf('bold',8,TEXT); doc.text("Points d'attention", col2X+5, y+7);
+  doc.setDrawColor(...BORDER); doc.setLineWidth(0.2);
+  doc.line(col2X+4,y+9,col2X+col2W-4,y+9);
+
+  let wy=y+12;
+  warnings.forEach((p,i)=>{
+    if(i>0){doc.setDrawColor(...BORDER);doc.setLineWidth(0.15);doc.line(col2X+4,wy-1,col2X+col2W-4,wy-1);}
+    doc.setFillColor(...ORANGE); doc.circle(col2X+7,wy+1,1,'F');
+    sf('bold',8.5,TEXT); doc.text(p.title,col2X+11,wy+1.5); wy+=4.5;
+    sf('normal',7,TEXT2);
+    const dl=doc.splitTextToSize(p.desc,col2W-14);
+    doc.text(dl,col2X+11,wy); wy+=dl.length*3.2+3;
+  });
+
+  y+=ph+4;
+
+  // === BOTTOM ROW: Context + Decisions ===
+  const botColW=CW*0.40, botCol2X=M+botColW+4, botCol2W=CW-botColW-4;
+  const ctxLines=doc.splitTextToSize(ctx,botColW-8);
+  const ctxH=ctxLines.length*3.4+14;
+  const decH2=decisions.length*7+14;
+  const botH=Math.max(ctxH,decH2);
+
+  // Context (left)
+  fsr(M,y,botColW,botH,[248,250,255],BORDER,0.25,3);
+  sf('bold',7,TEXT3); doc.text("CONTEXTE & ÉCHANGES", M+5,y+6);
+  doc.setDrawColor(...BORDER); doc.setLineWidth(0.2);
+  doc.line(M+4,y+8,M+botColW-4,y+8);
+  sf('normal',7.5,TEXT2);
+  doc.text(ctxLines,M+5,y+13);
+
+  // Decisions (right)
+  fsr(botCol2X,y,botCol2W,botH,WHITE,BORDER,0.25,3);
+  sf('bold',7,TEXT3); doc.text('RELEVÉ DE DÉCISIONS',botCol2X+5,y+6);
+  doc.setDrawColor(...BORDER); doc.setLineWidth(0.2);
+  doc.line(botCol2X+4,y+8,botCol2X+botCol2W-4,y+8);
+
+  let dy=y+13;
+  decisions.forEach(d=>{
+    const tbg=d.type==='d'?GREEN_BG:d.type==='a'?ORANGE_BG:TEAL_BG;
+    const ttxt=d.type==='d'?GREEN:d.type==='a'?ORANGE:TEAL;
+    const tbrd=d.type==='d'?GREEN_BORDER:d.type==='a'?ORANGE_BORDER:TEAL_BORDER;
+    fsr(botCol2X+4,dy-3.5,botCol2W-8,6.5,[248,250,255],BORDER,0.2,1.5);
+    sf('bold',6.5,ttxt);
+    const tpw=tw(d.tag)+6;
+    fsr(botCol2X+6,dy-2.8,tpw,5,tbg,tbrd,0.2,1.5);
+    doc.text(d.tag,botCol2X+6+tpw/2,dy+0.2,{align:'center'});
+    sf('normal',7.5,TEXT);
+    const dtxt=doc.splitTextToSize(d.text,botCol2W-8-tpw-8);
+    doc.text(dtxt[0]||d.text,botCol2X+8+tpw,dy+0.2);
+    dy+=7;
+  });
+
+  y+=botH;
+
+  // Footer
+  sf('normal',6.5,TEXT3);
+  doc.text('HandballAI · Pôle Espoirs Occitanie',M,H-6);
+  doc.text(dateStr,W-M,H-6,{align:'right'});
+
+  doc.save('CR_'+pName.replace(/\s+/g,'_')+'_'+new Date().toISOString().slice(0,10)+'.pdf');
+}
+
+function exportPDF_OLD() {
+  const {jsPDF} = window.jspdf;
+  const doc = new jsPDF({orientation:'portrait', unit:'mm', format:'a4'});
+  const W = 210, H = 297;
+  const M = 12; // margin
+  const CW = W - M*2; // content width
+  
+  // Colors
+  const C_BG = [245,244,240];
+  const C_WHITE = [255,255,255];
+  const C_BORDER = [226,223,214];
+  const C_TEXT = [26,25,22];
+  const C_TEXT2 = [90,88,80];
+  const C_TEXT3 = [154,152,144];
+  const C_BLUE = [30,95,168];
+  const C_BLUE_BG = [232,240,250];
+  const C_BLUE_BORDER = [176,202,240];
+  const C_GREEN = [45,125,82];
+  const C_GREEN_BG = [234,244,238];
+  const C_GREEN_BORDER = [184,223,200];
+  const C_ORANGE = [184,92,26];
+  const C_ORANGE_BG = [253,240,230];
+  const C_ORANGE_BORDER = [240,201,160];
+  const C_RED = [168,50,50];
+  const C_RED_BG = [250,234,234];
+  const C_RED_BORDER = [240,176,176];
+  const C_GRAY_BG = [240,239,233];
+
+  // Helper functions
+  const setFont = (style, size, color) => {
+    doc.setFont('helvetica', style);
+    doc.setFontSize(size);
+    doc.setTextColor(...(color||C_TEXT));
+  };
+
+  const fillRect = (x,y,w,h,color,radius) => {
+    doc.setFillColor(...color);
+    if (radius) doc.roundedRect(x,y,w,h,radius,radius,'F');
+    else doc.rect(x,y,w,h,'F');
+  };
+
+  const strokeRect = (x,y,w,h,color,lw,radius) => {
+    doc.setDrawColor(...color);
+    doc.setLineWidth(lw||0.3);
+    if (radius) doc.roundedRect(x,y,w,h,radius,radius,'S');
+    else doc.rect(x,y,w,h,'S');
+  };
+
+  const fillStrokeRect = (x,y,w,h,fill,stroke,lw,radius) => {
+    doc.setFillColor(...fill);
+    doc.setDrawColor(...stroke);
+    doc.setLineWidth(lw||0.3);
+    if (radius) doc.roundedRect(x,y,w,h,radius,radius,'FD');
+    else doc.rect(x,y,w,h,'FD');
+  };
+
+  const textBox = (text, x, y, maxW, size, style, color) => {
+    setFont(style||'normal', size||9, color||C_TEXT);
+    const lines = doc.splitTextToSize(text, maxW);
+    doc.text(lines, x, y);
+    return lines.length * (size||9) * 0.4;
+  };
+
+  const pill = (text, x, y, bgColor, textColor, borderColor) => {
+    setFont('normal', 7.5, textColor);
+    const tw = doc.getTextWidth(text);
+    const pw = tw + 6, ph = 4.5;
+    fillStrokeRect(x, y-3.2, pw, ph, bgColor, borderColor||bgColor, 0.3, 2);
+    doc.text(text, x+3, y);
+    return pw;
+  };
+
+  // Collect data from DOM
+  const pName = document.getElementById('fichePlayerName').textContent.trim();
+  const pSub = document.getElementById('fichePlayerSub').textContent.trim();
+  const pInitial = pName[0].toUpperCase();
+  const decText = document.getElementById('ficheDecision').textContent.trim();
+  const decType = document.getElementById('ficheDecision').className.replace('decision-badge ','');
+  const contextText = document.getElementById('ficheContext').textContent.trim();
+  
+  const stats = [];
+  document.querySelectorAll('#ficheStats .stat-card').forEach(s => {
+    stats.push({
+      label: s.querySelector('.stat-label').textContent.trim(),
+      value: s.querySelector('.stat-value').textContent.trim(),
+      color: s.querySelector('.stat-value').className.includes('success') ? 'success' : 
+             s.querySelector('.stat-value').className.includes('warn') ? 'warn' :
+             s.querySelector('.stat-value').className.includes('info') ? 'info' : 'default'
+    });
+  });
+
+  const strengths = [];
+  document.querySelectorAll('#strengths .point-item').forEach(p => {
+    strengths.push({
+      title: p.querySelector('.point-title').textContent.trim(),
+      desc: p.querySelector('.point-desc').textContent.trim()
+    });
+  });
+
+  const warnings = [];
+  document.querySelectorAll('#warnings .point-item').forEach(p => {
+    warnings.push({
+      title: p.querySelector('.point-title').textContent.trim(),
+      desc: p.querySelector('.point-desc').textContent.trim()
+    });
+  });
+
+  const decisions = [];
+  document.querySelectorAll('#decisions .decision-item').forEach(d => {
+    const tag = d.querySelector('.decision-tag');
+    decisions.push({
+      tag: tag.className.includes('decided') ? 'Décidé' : tag.className.includes('action') ? 'Action' : 'Objectif',
+      tagType: tag.className.includes('decided') ? 'decided' : tag.className.includes('action') ? 'action' : 'obj',
+      text: d.querySelector('.decision-text').textContent.trim()
+    });
+  });
+
+  // --- START DRAWING ---
+  
+  // Full page background
+  fillRect(0, 0, W, H, C_BG);
+
+  let y = M;
+
+  // === HEADER BLOCK ===
+  fillStrokeRect(M, y, CW, 18, C_WHITE, C_BORDER, 0.3, 2);
+  
+  // Avatar circle
+  doc.setFillColor(232,240,250);
+  doc.setDrawColor(...C_BLUE_BORDER);
+  doc.setLineWidth(0.5);
+  doc.circle(M+11, y+9, 7, 'FD');
+  setFont('bold', 10, C_BLUE);
+  doc.text(pInitial, M+11, y+11, {align:'center'});
+
+  // Player name & sub
+  setFont('bold', 13, C_TEXT);
+  doc.text(pName.toUpperCase(), M+22, y+7);
+  setFont('normal', 8, C_TEXT2);
+  doc.text(pSub, M+22, y+13);
+
+  // Decision badge
+  const decBg = decType==='reconduit' ? C_GREEN_BG : decType==='fin' ? C_RED_BG : C_BLUE_BG;
+  const decTxt = decType==='reconduit' ? C_GREEN : decType==='fin' ? C_RED : C_BLUE;
+  const decBorder = decType==='reconduit' ? C_GREEN_BORDER : decType==='fin' ? C_RED_BORDER : C_BLUE_BORDER;
+  setFont('normal', 8, decTxt);
+  const decW = doc.getTextWidth(decText) + 10;
+  fillStrokeRect(W-M-decW, y+5, decW, 8, decBg, decBorder, 0.3, 3);
+  doc.text(decText, W-M-decW/2, y+10, {align:'center'});
+  
+  y += 21;
+
+  // === STATS ROW ===
+  const statW = CW / Math.max(stats.length, 1);
+  stats.forEach((s, i) => {
+    const sx = M + i * statW;
+    fillStrokeRect(sx, y, statW-1, 14, C_WHITE, C_BORDER, 0.3, 2);
+    setFont('normal', 6.5, C_TEXT3);
+    doc.text(s.label.toUpperCase(), sx+4, y+5);
+    const valColor = s.color==='success' ? C_GREEN : s.color==='warn' ? C_ORANGE : s.color==='info' ? C_BLUE : C_TEXT;
+    setFont('bold', 9, valColor);
+    doc.text(s.value, sx+4, y+11);
+  });
+  
+  y += 17;
+
+  // === TWO COLUMNS: STRENGTHS + WARNINGS ===
+  const colW = (CW - 4) / 2;
+  const col1X = M, col2X = M + colW + 4;
+  
+  // Measure heights needed
+  const measurePoints = (points, maxW) => {
+    let h = 8; // title row
+    points.forEach(p => {
+      doc.setFontSize(8);
+      h += 4.5;
+      doc.setFontSize(7);
+      h += doc.splitTextToSize(p.desc, maxW-14).length * 3.2 + 3;
+    });
+    return h;
+  };
+
+  const str_h = measurePoints(strengths, colW);
+  const warn_h = measurePoints(warnings, colW);
+  const points_h = Math.max(str_h, warn_h);
+
+  // Strengths card
+  fillStrokeRect(col1X, y, colW, points_h, C_WHITE, C_BORDER, 0.3, 2);
+  setFont('bold', 7, C_TEXT3);
+  doc.text('POINTS FORTS', col1X+4, y+5.5);
+  doc.setDrawColor(...C_BORDER);
+  doc.setLineWidth(0.2);
+  doc.line(col1X+4, y+7, col1X+colW-4, y+7);
+  
+  let sy = y + 10;
+  strengths.forEach((p, i) => {
+    if (i > 0) { doc.setDrawColor(...C_BORDER); doc.setLineWidth(0.15); doc.line(col1X+4, sy-1, col1X+colW-4, sy-1); }
+    doc.setFillColor(...C_GREEN);
+    doc.circle(col1X+7, sy+1, 1.2, 'F');
+    setFont('bold', 8, C_TEXT);
+    doc.text(p.title, col1X+11, sy+1.5);
+    sy += 4.5;
+    setFont('normal', 7, C_TEXT2);
+    const dlines = doc.splitTextToSize(p.desc, colW-14);
+    doc.text(dlines, col1X+11, sy);
+    sy += dlines.length * 3.2 + 3;
+  });
+
+  // Warnings card
+  fillStrokeRect(col2X, y, colW, points_h, C_WHITE, C_BORDER, 0.3, 2);
+  setFont('bold', 7, C_TEXT3);
+  doc.text("POINTS D'ATTENTION", col2X+4, y+5.5);
+  doc.setDrawColor(...C_BORDER);
+  doc.setLineWidth(0.2);
+  doc.line(col2X+4, y+7, col2X+colW-4, y+7);
+
+  let wy = y + 10;
+  warnings.forEach((p, i) => {
+    if (i > 0) { doc.setDrawColor(...C_BORDER); doc.setLineWidth(0.15); doc.line(col2X+4, wy-1, col2X+colW-4, wy-1); }
+    doc.setFillColor(...C_ORANGE);
+    doc.circle(col2X+7, wy+1, 1.2, 'F');
+    setFont('bold', 8, C_TEXT);
+    doc.text(p.title, col2X+11, wy+1.5);
+    wy += 4.5;
+    setFont('normal', 7, C_TEXT2);
+    const dlines = doc.splitTextToSize(p.desc, colW-14);
+    doc.text(dlines, col2X+11, wy);
+    wy += dlines.length * 3.2 + 3;
+  });
+
+  y += points_h + 4;
+
+  // === CONTEXT ===
+  setFont('normal', 7.5, C_TEXT2);
+  const ctxLines = doc.splitTextToSize(contextText, CW-10);
+  const ctx_h = ctxLines.length * 3.5 + 10;
+  fillStrokeRect(M, y, CW, ctx_h, C_WHITE, C_BORDER, 0.3, 2);
+  setFont('bold', 7, C_TEXT3);
+  doc.text('CONTEXTE & ÉCHANGES CLÉS', M+4, y+5.5);
+  doc.setDrawColor(...C_BORDER); doc.setLineWidth(0.2);
+  doc.line(M+4, y+7, M+CW-4, y+7);
+  setFont('normal', 7.5, C_TEXT2);
+  doc.text(ctxLines, M+4, y+11);
+  
+  y += ctx_h + 4;
+
+  // === DECISIONS ===
+  const dec_itemH = 7;
+  const dec_h = decisions.length * (dec_itemH+2) + 10;
+  fillStrokeRect(M, y, CW, dec_h, C_WHITE, C_BORDER, 0.3, 2);
+  setFont('bold', 7, C_TEXT3);
+  doc.text('RELEVÉ DE DÉCISIONS', M+4, y+5.5);
+  doc.setDrawColor(...C_BORDER); doc.setLineWidth(0.2);
+  doc.line(M+4, y+7, M+CW-4, y+7);
+
+  let dy = y + 11;
+  decisions.forEach((d, i) => {
+    fillStrokeRect(M+3, dy-3.5, CW-6, dec_itemH, C_GRAY_BG, C_BORDER, 0.2, 1.5);
+    const tagBg = d.tagType==='decided' ? C_GREEN_BG : d.tagType==='action' ? C_ORANGE_BG : C_BLUE_BG;
+    const tagTxt = d.tagType==='decided' ? C_GREEN : d.tagType==='action' ? C_ORANGE : C_BLUE;
+    const tagBorder = d.tagType==='decided' ? C_GREEN_BORDER : d.tagType==='action' ? C_ORANGE_BORDER : C_BLUE_BORDER;
+    setFont('bold', 6.5, tagTxt);
+    const tagW = doc.getTextWidth(d.tag) + 6;
+    fillStrokeRect(M+6, dy-2.5, tagW, 5, tagBg, tagBorder, 0.2, 1.5);
+    doc.text(d.tag, M+6+tagW/2, dy+0.5, {align:'center'});
+    setFont('normal', 7.5, C_TEXT);
+    doc.text(d.text, M+8+tagW, dy+0.5);
+    dy += dec_itemH + 2;
+  });
+
+  y += dec_h;
+
+  // Footer
+  setFont('normal', 6.5, C_TEXT3);
+  doc.text('HandballAI · Pôle Espoirs', M, H-5);
+  doc.text(new Date().toLocaleDateString('fr-FR'), W-M, H-5, {align:'right'});
+
+  doc.save('CR_' + pName.replace(/\s+/g,'_') + '_' + new Date().toISOString().slice(0,10) + '.pdf');
+} // end exportPDF_OLD
+</script>
+</body>
+</html>
