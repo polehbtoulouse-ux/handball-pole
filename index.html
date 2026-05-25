@@ -102,11 +102,19 @@ input::placeholder{color:var(--text3)}
 .plaud-decision-row{display:grid;grid-template-columns:1.8fr 1fr;gap:12px;margin-bottom:12px}
 
 .plaud-decision-main{
-  background:#eef0fc;
-  border:1px solid #d0d4f0;
+  background:#1e3a6e;
+  border:1px solid #152d58;
   border-radius:10px;
   padding:16px;
+  color:white;
 }
+.plaud-decision-main .plaud-decision-title{color:white}
+.plaud-decision-main .plaud-decision-sub{color:#a0b8e0}
+.plaud-decision-main .plaud-subcard{background:rgba(255,255,255,0.1);border:1px solid rgba(255,255,255,0.2)}
+.plaud-decision-main .plaud-subcard-label{color:#a0b8e0}
+.plaud-decision-main .plaud-subcard-text{color:#e0ecff}
+.plaud-decision-main .plaud-subcard-text strong{color:white}
+.plaud-decision-main .plaud-decision-icon{background:rgba(255,255,255,0.15);border-color:rgba(255,255,255,0.2);color:white}
 .plaud-decision-icon{width:36px;height:36px;background:white;border-radius:8px;border:1px solid #d0d4f0;display:flex;align-items:center;justify-content:center;margin-bottom:10px;font-size:16px}
 .plaud-decision-title{font-size:15px;font-weight:700;color:#1a1a2e;margin-bottom:3px}
 .plaud-decision-sub{font-size:12px;color:#6060a0;margin-bottom:12px}
@@ -117,11 +125,15 @@ input::placeholder{color:var(--text3)}
 .plaud-subcard-text strong{font-weight:600;color:#1a1a2e}
 
 .plaud-decision-right{
-  background:white;
-  border:1px solid #e8e8f0;
+  background:#2a4a8a;
+  border:1px solid #1e3a70;
   border-radius:10px;
   padding:16px;
 }
+.plaud-decision-right .plaud-quote{color:white}
+.plaud-decision-right .plaud-check-item{color:#c0d4f0}
+.plaud-decision-right .plaud-check-icon{background:rgba(255,255,255,0.15);border-color:rgba(255,255,255,0.3);color:white}
+.plaud-decision-right .plaud-neutralite{background:rgba(255,255,255,0.1);border-color:rgba(255,255,255,0.2);color:#a0c0e8}
 .plaud-quote{font-size:13px;font-style:italic;font-weight:600;color:#2a2a4e;margin-bottom:12px;line-height:1.4}
 .plaud-check-item{display:flex;align-items:flex-start;gap:8px;margin-bottom:8px;font-size:11.5px;color:#4a4a6e;line-height:1.5}
 .plaud-check-item:last-child{margin-bottom:0}
@@ -131,7 +143,8 @@ input::placeholder{color:var(--text3)}
 /* Colonnes technique / défense */
 .plaud-cols{display:grid;grid-template-columns:1.2fr 1fr;gap:12px;margin-bottom:12px}
 
-.plaud-col{background:white;border:1px solid #e8e8f0;border-radius:10px;padding:16px}
+.plaud-col{background:#eef4ff;border:1px solid #c8d8f8;border-radius:10px;padding:16px}
+.plaud-col .plaud-highlight{background:#ddeeff;border:1px solid #b0ccf0}
 .plaud-col-header{display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:4px}
 .plaud-col-title{font-size:14px;font-weight:700;color:#1a1a2e}
 .plaud-col-icon{font-size:18px;color:#9090b8}
@@ -163,7 +176,7 @@ input::placeholder{color:var(--text3)}
 
 /* Bas : scolaire + organisation */
 .plaud-bottom{display:grid;grid-template-columns:0.8fr 1.2fr;gap:12px;margin-bottom:0}
-.plaud-scolaire{background:#f8fbf0;border:1px solid #ddeebb;border-radius:10px;padding:16px}
+.plaud-scolaire{background:#e8f5ee;border:1px solid #b8dfc8;border-radius:10px;padding:16px}
 .plaud-scolaire-title{font-size:14px;font-weight:700;color:#2a4a1e;margin-bottom:4px;display:flex;align-items:center;gap:6px}
 .plaud-scolaire-sub{font-size:11px;color:#4a6a3e;margin-bottom:10px}
 .plaud-scolaire-row{display:flex;justify-content:space-between;align-items:center;font-size:11.5px;margin-bottom:6px}
@@ -173,7 +186,7 @@ input::placeholder{color:var(--text3)}
 .plaud-echeances-items{display:flex;gap:6px;flex-wrap:wrap}
 .plaud-echeance-pill{background:white;border:1px solid #e0e0ee;border-radius:4px;font-size:10px;color:#5050a0;padding:2px 7px}
 
-.plaud-orga{background:white;border:1px solid #e8e8f0;border-radius:10px;padding:16px}
+.plaud-orga{background:#eef4ff;border:1px solid #c8d8f8;border-radius:10px;padding:16px}
 .plaud-orga-header{display:flex;justify-content:space-between;align-items:center;margin-bottom:10px}
 .plaud-orga-title{font-size:14px;font-weight:700;color:#1a1a2e}
 .plaud-orga-badge{background:#f0f0f8;border:1px solid #d8d8f0;border-radius:20px;font-size:10px;color:#6060a0;padding:3px 10px}
