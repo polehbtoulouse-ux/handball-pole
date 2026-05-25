@@ -491,10 +491,16 @@ async function startAnalysis(){
     const dateStr=now.toLocaleDateString('fr-FR',{day:'numeric',month:'long',year:'numeric'});
     const firstName=playerName.split(' ')[0];
 
+    // Tronquer la transcription à 6000 caractères max pour économiser les tokens
+    const maxChars = 6000;
+    const truncated = transcriptText.length > maxChars 
+      ? transcriptText.slice(0, maxChars) + '\n[... transcription tronquée pour analyse ...]'
+      : transcriptText;
+
     const prompt=`Tu es expert en formation handball au Pôle Espoirs. Analyse cette transcription et génère un JSON pour créer une fiche visuelle style "bilan de fin de cycle" comme Plaud.
 
 TRANSCRIPTION :
-${transcriptText}
+${truncated}
 
 Génère UNIQUEMENT un JSON valide (sans markdown) avec cette structure exacte :
 {
@@ -553,7 +559,7 @@ RÈGLES IMPORTANTES :
       method:'POST',
       headers:{'Authorization':'Bearer '+GROQ_KEY,'Content-Type':'application/json'},
       body:JSON.stringify({
-        model:'llama-3.1-8b-instant',
+        model:'llama-3.3-70b-versatile',
         temperature:0.25,
         max_tokens:3000,
         messages:[
