@@ -589,8 +589,8 @@ RÈGLES IMPORTANTES :
                          .replace(/\n/g,'\\n');
         d=JSON.parse(fixed);
       } catch(e2) {
-        console.error('Raw response:', raw.slice(0,500));
-        throw new Error('Réponse IA invalide. Réessayez — si le problème persiste, raccourcissez l\'audio.');
+        console.error('Raw response:', raw.slice(0,1000));
+        throw new Error('Réponse IA invalide : ' + raw.slice(0,200));
       }
     }
     setProgress(100,'Fiche générée !');
