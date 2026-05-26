@@ -455,7 +455,7 @@ Toutes les valeurs string doivent être sur une seule ligne sans retour à la li
   "planning": [{"day": "LUN", "text": "[activité]"}, {"day": "MAR-JEU", "text": "[activité]"}, {"day": "MER", "text": "[activité]"}],
   "actions": ["[action 1]", "[action 2]", "[action 3]"],
   "quote_text": "[citation directe joueur 10 mots]",
-  "compte_rendu": "COMPTE RENDU — ${playerName.toUpperCase()}\\nDate : ${dateStr}\\n\\nCONTEXTE\\n[3-4 phrases sur le contexte]\\n\\nÉCHANGES\\n[4-5 paragraphes rédigés fidèles aux propos réels]\\n\\nPOINTS D'ATTENTION\\n— [point 1]\\n— [point 2]\\n— [point 3]\\n\\nRELEVÉ DE DÉCISIONS\\n— [décision 1]\\n— [décision 2]\\n— [décision 3]"
+  "compte_rendu": "COMPTE RENDU D'ENTRETIEN INDIVIDUEL\nJoueur : ${playerName}\nDate : ${dateStr}\nLieu : Pole Espoirs Occitanie\n\nCONTEXTE ET PARTICIPANTS\n[4-5 phrases : qui etait present, objet de l'entretien, cadre, atmosphere]\n\nDEROULEMENT ET ECHANGES\n[6 a 8 paragraphes de 4-6 lignes chacun. Chaque paragraphe traite un theme aborde. Restituer fidelement les propos, nuances, reactions du joueur. Utiliser : Le joueur exprime... / Les entraineurs soulignent... / Il est rappele... / Face a cette remarque... / Les encadrants insistent sur... Citer des propos directs entre guillemets.]\n\nANALYSE DU PROFIL\n[2-3 paragraphes : forces identifiees, axes de progression prioritaires, maturite du joueur]\n\nPOINTS D'ATTENTION\n— [point precis 1 avec contexte]\n— [point precis 2 avec contexte]\n— [point precis 3]\n— [point precis 4]\n— [point precis 5 si pertinent]\n\nRELEVE DE DECISIONS ET ENGAGEMENTS\n— [decision concrete 1 avec responsable et echeance si mentionnes]\n— [decision concrete 2]\n— [decision concrete 3]\n— [decision concrete 4]\n— [decision concrete 5 si pertinent]"
 }`;
 
     setProgress(40,'Transcription et analyse…');
@@ -613,7 +613,7 @@ async function exportFullPDF(){
       pW=origVp.width*0.352777;pH=origVp.height*0.352777;
       doc=new jsPDF({orientation:pH>pW?'portrait':'landscape',unit:'mm',format:[pW,pH]});
       doc.addImage(tplImg,'JPEG',0,0,pW,pH);
-      const logoEndY=pH*0.22;
+      const logoEndY=pH*0.15;
       const drawW=pW-M*2;
       const drawH=drawW*(ficheH/ficheW);
       const availH=pH-logoEndY-M;
@@ -631,7 +631,7 @@ async function exportFullPDF(){
     if(compteRendu){
       doc.addPage();
       if(tplImg)doc.addImage(tplImg,'JPEG',0,0,pW,pH);
-      renderTextPage(doc,compteRendu,M,pH*0.22,pW-M*2,pH-pH*0.22-M,pW,pH,tplImg);
+      renderTextPage(doc,compteRendu,M,pH*0.15,pW-M*2,pH-pH*0.15-M,pW,pH,tplImg);
     }
 
     doc.save('CR_'+playerName.replace(/[^a-z0-9]/gi,'_').toLowerCase()+'_'+now.toISOString().slice(0,10)+'.pdf');
