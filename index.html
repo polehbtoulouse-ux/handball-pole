@@ -470,8 +470,7 @@ Toutes les valeurs string doivent être sur une seule ligne sans retour à la li
   "orga_badge": "[objectif court]",
   "planning": [{"day": "LUN", "text": "[activité]"}, {"day": "MAR-JEU", "text": "[activité]"}, {"day": "MER", "text": "[activité]"}],
   "actions": ["[action 1]", "[action 2]", "[action 3]"],
-  "quote_text": "[citation directe joueur 10 mots]",
-  "compte_rendu": "COMPTE RENDU D'ENTRETIEN INDIVIDUEL\nJoueur : ${playerName}\nDate : ${dateStr}\nLieu : Pole Espoirs Occitanie\n\nCONTEXTE ET PARTICIPANTS\n[4-5 phrases : qui etait present, objet de l'entretien, cadre, atmosphere]\n\nDEROULEMENT ET ECHANGES\n[6 a 8 paragraphes de 4-6 lignes chacun. Chaque paragraphe traite un theme aborde. Restituer fidelement les propos, nuances, reactions du joueur. Utiliser : Le joueur exprime... / Les entraineurs soulignent... / Il est rappele... / Face a cette remarque... / Les encadrants insistent sur... Citer des propos directs entre guillemets.]\n\nANALYSE DU PROFIL\n[2-3 paragraphes : forces identifiees, axes de progression prioritaires, maturite du joueur]\n\nPOINTS D'ATTENTION\n— [point precis 1 avec contexte]\n— [point precis 2 avec contexte]\n— [point precis 3]\n— [point precis 4]\n— [point precis 5 si pertinent]\n\nRELEVE DE DECISIONS ET ENGAGEMENTS\n— [decision concrete 1 avec responsable et echeance si mentionnes]\n— [decision concrete 2]\n— [decision concrete 3]\n— [decision concrete 4]\n— [decision concrete 5 si pertinent]"
+  "quote_text": "[citation directe joueur 10 mots]"
 }`;
 
     setProgress(40,'Transcription et analyse…');
@@ -492,6 +491,7 @@ Toutes les valeurs string doivent être sur une seule ligne sans retour à la li
     if(!tr.ok){const e=await tr.json().catch(()=>({}));throw new Error('Transcription : '+(e.error?.message||tr.status));}
     const transcription=await tr.text();
     if(!transcription||transcription.length<10)throw new Error('Transcription vide — vérifiez le fichier audio.');
+    window._lastTranscription = transcription;
 
     setProgress(50,'Analyse par Claude…');
 
@@ -532,14 +532,8 @@ Toutes les valeurs string doivent être sur une seule ligne sans retour à la li
     try{d=JSON.parse(raw);}
     catch(e){throw new Error('JSON invalide : '+raw.slice(0,150));}
 
-    compteRendu=d.compte_rendu||'';
-  if(compteRendu){
-    document.getElementById('compteRenduSection').style.display='block';
-    document.getElementById('compteRenduEditor').value=compteRendu;
-    document.getElementById('compteRenduEditor').addEventListener('input',function(){
-      compteRendu=this.value;
-    });
-  }
+    // Génération du compte rendu en second appel
+  genererCompteRendu(transcription, dateStr);
     setProgress(100,'Fiche générée !');
     setTimeout(()=>{
       document.getElementById('progressPanel').classList.remove('on');
@@ -606,6 +600,79 @@ function renderFiche(d,firstName){
   document.getElementById('plaudQText').textContent=d.quote_text||'';
   document.getElementById('ficheArea').classList.add('on');
   document.getElementById('ficheArea').scrollIntoView({behavior:'smooth',block:'start'});
+}
+
+async function genererCompteRendu(transcription, dateStr) {
+  try {
+    document.getElementById('compteRenduSection').style.display='block';
+    document.getElementById('compteRenduEditor').value='⏳ Génération du compte rendu détaillé en cours...';
+
+    const GROQ_KEY = atob('Z3NrX3RHN0xpOTFHTzdlRFFqeFhVSXFOV0dkeWIzRllzNXJDbWpLakJ2V042NEJrZU56bG5QbE4=');
+
+    const prompt = `Tu es expert en formation handball au Pôle Espoirs Occitanie. Rédige un compte rendu d'entretien individuel détaillé et professionnel en français.
+
+TRANSCRIPTION :
+${transcription}
+
+STRUCTURE OBLIGATOIRE :
+
+COMPTE RENDU D'ENTRETIEN INDIVIDUEL
+Joueur : ${playerName}
+Date : ${dateStr}
+Lieu : Pôle Espoirs Occitanie
+
+CONTEXTE ET PARTICIPANTS
+[4-5 phrases complètes : qui était présent, quel est l'objet précis de l'entretien, dans quel cadre il s'inscrit]
+
+DÉROULEMENT ET ÉCHANGES
+[Rédige 6 à 8 paragraphes de 4 à 6 lignes chacun. Chaque paragraphe traite un thème distinct abordé pendant l'entretien. Restitue fidèlement les propos, les nuances et les réactions du joueur. Utilise des formulations comme : "Le joueur exprime...", "Les entraîneurs soulignent...", "Il est rappelé que...", "Face à cette observation, Hugo reconnaît...", "Les encadrants insistent sur...". Cite des propos directs entre guillemets quand c'est pertinent.]
+
+ANALYSE DU PROFIL
+[2 à 3 paragraphes d'analyse : forces clairement identifiées, axes de progression prioritaires, niveau de maturité du joueur par rapport à son projet sportif et personnel]
+
+POINTS D'ATTENTION
+— [point précis et factuel 1 avec contexte]
+— [point précis et factuel 2 avec contexte]
+— [point précis et factuel 3]
+— [point précis et factuel 4]
+— [point précis et factuel 5 si pertinent]
+
+RELEVÉ DE DÉCISIONS ET ENGAGEMENTS
+— [décision/engagement concret 1 avec responsable et échéance si mentionnés]
+— [décision/engagement concret 2]
+— [décision/engagement concret 3]
+— [décision/engagement concret 4]
+— [suite si nécessaire]
+
+Sois précis, factuel et ancré dans les propos réels de l'entretien. Aucune généralité.`;
+
+    const r = await fetch('https://api.groq.com/openai/v1/chat/completions', {
+      method: 'POST',
+      headers: {'Authorization': 'Bearer ' + GROQ_KEY, 'Content-Type': 'application/json'},
+      body: JSON.stringify({
+        model: 'llama-3.3-70b-versatile',
+        temperature: 0.2,
+        max_tokens: 4000,
+        messages: [
+          {role: 'system', content: 'Tu rédiges un compte rendu professionnel détaillé en français. Réponds directement avec le texte structuré, sans introduction ni conclusion supplémentaire.'},
+          {role: 'user', content: prompt}
+        ]
+      })
+    });
+
+    if (r.ok) {
+      const data = await r.json();
+      compteRendu = data.choices?.[0]?.message?.content?.trim() || '';
+      document.getElementById('compteRenduEditor').value = compteRendu;
+      document.getElementById('compteRenduEditor').addEventListener('input', function(){
+        compteRendu = this.value;
+      });
+    } else {
+      document.getElementById('compteRenduEditor').value = 'Erreur lors de la génération. Vous pouvez saisir le compte rendu manuellement.';
+    }
+  } catch(e) {
+    document.getElementById('compteRenduEditor').value = 'Erreur : ' + e.message + '\n\nVous pouvez saisir le compte rendu manuellement ici.';
+  }
 }
 
 async function exportFullPDF(){
