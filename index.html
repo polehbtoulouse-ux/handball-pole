@@ -418,6 +418,16 @@ async function fileToB64(file){
   });
 }
 
+function getSaison(){
+  const d=new Date();
+  const y=d.getFullYear();
+  const m=d.getMonth()+1; // 1-12
+  // Saison handball : septembre à juin
+  // Ex: oct 2025 → saison 2025-2026, mars 2026 → saison 2025-2026
+  if(m>=9){return y+'-'+(y+1);}
+  else{return (y-1)+'-'+y;}
+}
+
 async function startAnalysis(){
   playerName=document.getElementById('playerName').value.trim();
   if(!audioFile||!playerName)return;
@@ -442,7 +452,7 @@ Toutes les valeurs string doivent être sur une seule ligne sans retour à la li
     const userPrompt=`Analyse cet entretien avec ${playerName} (${dateStr}) et génère ce JSON exact :
 
 {
-  "tags": ["Saison 2024-2025", "Bilan de fin de cycle"],
+  "tags": ["Saison ${getSaison()}", "Bilan de fin de cycle"],
   "title": "Décision et Axes de Développement : ${firstName}",
   "subtitle": "Évaluation sportive et projection vers le haut niveau",
   "decision_title": "Décision : [5 mots max]",
