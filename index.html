@@ -142,9 +142,11 @@ input::placeholder{color:var(--text3)}
 .plaud-quote-avatar{width:20px;height:20px;border-radius:50%;background:#c0d8f8;display:flex;align-items:center;justify-content:center;font-size:9px;font-weight:600;color:#2050a0;flex-shrink:0}
 .plaud-quote-text{font-size:11px;color:#2050a0;font-style:italic}
 
-[contenteditable]{outline:none;cursor:text;border-radius:4px;transition:background .15s;padding:1px 3px;margin:-1px -3px}
-[contenteditable]:hover{background:rgba(74,122,223,0.06)}
-[contenteditable]:focus{background:rgba(74,122,223,0.1);box-shadow:0 0 0 2px rgba(74,122,223,0.2)}
+[contenteditable]{outline:none;cursor:text;border-radius:4px;transition:background .15s;padding:1px 3px;margin:-1px -3px;min-width:10px;display:inline-block}
+[contenteditable]:hover{background:rgba(74,122,223,0.08);outline:1px dashed rgba(74,122,223,0.3)}
+[contenteditable]:focus{background:rgba(74,122,223,0.12);box-shadow:0 0 0 2px rgba(74,122,223,0.25);outline:none}
+#compteRenduEditor:focus{border-color:rgba(74,122,223,0.5);box-shadow:0 0 0 3px rgba(74,122,223,0.12)}
+.plaud-title[contenteditable]:hover,.plaud-subtitle[contenteditable]:hover{background:rgba(74,122,223,0.05)}
 
 .fiche-actions{display:flex;gap:8px;margin-top:1.25rem;flex-wrap:wrap}
 
@@ -229,6 +231,10 @@ input::placeholder{color:var(--text3)}
   <div class="error-box" id="errorBox"></div>
 
   <div class="fiche-area" id="ficheArea">
+    <div style="background:rgba(74,122,223,0.08);border:1px solid rgba(74,122,223,0.2);border-radius:8px;padding:8px 14px;margin-bottom:10px;font-size:12px;color:#6080c0;display:flex;align-items:center;gap:8px">
+      <span style="font-size:16px">✏️</span>
+      <span>Tous les textes sont <strong>modifiables</strong> — cliquez sur n'importe quel élément pour l'éditer avant l'export PDF</span>
+    </div>
     <div class="plaud" id="plaudDoc">
       <div class="plaud-tags" id="plaudTags"></div>
       <div class="plaud-title" id="plaudTitle" contenteditable="true">—</div>
@@ -241,11 +247,11 @@ input::placeholder{color:var(--text3)}
           <div class="plaud-decision-subgrid">
             <div class="plaud-subcard">
               <div class="plaud-subcard-label">Constat sportif</div>
-              <div class="plaud-subcard-text" id="plaudConstat" contenteditable="true">—</div>
+              <div class="plaud-subcard-text" id="plaudConstat" contenteditable="true" contenteditable="true">—</div>
             </div>
             <div class="plaud-subcard">
               <div class="plaud-subcard-label">Concurrence</div>
-              <div class="plaud-subcard-text" id="plaudConcurrence" contenteditable="true">—</div>
+              <div class="plaud-subcard-text" id="plaudConcurrence" contenteditable="true" contenteditable="true">—</div>
             </div>
           </div>
         </div>
@@ -316,9 +322,19 @@ input::placeholder{color:var(--text3)}
       </div>
     </div>
 
+    <div id="compteRenduSection" style="display:none;margin-top:12px">
+      <div style="background:var(--surface);border:1px solid var(--border);border-radius:var(--r);padding:1.25rem">
+        <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:10px">
+          <div style="font-size:10px;font-weight:600;letter-spacing:1.2px;text-transform:uppercase;color:var(--text3)">Compte rendu détaillé — Pages 2+</div>
+          <span style="font-size:11px;color:var(--text3)">✏️ Modifiable</span>
+        </div>
+        <textarea id="compteRenduEditor" style="width:100%;min-height:400px;background:var(--surface2);border:1px solid var(--border2);border-radius:var(--r2);color:var(--text);font-family:'Inter',sans-serif;font-size:13px;line-height:1.7;padding:14px;outline:none;resize:vertical;transition:border-color .15s" placeholder="Le compte rendu textuel apparaîtra ici après génération..."></textarea>
+      </div>
+    </div>
+
     <div class="fiche-actions">
       <button class="btn btn-outline" onclick="resetAll()">Nouvel entretien</button>
-      <button class="btn btn-success" onclick="exportFullPDF()">🖨 Exporter PDF</button>
+      <button class="btn btn-success" onclick="exportFullPDF()">🖨 Exporter PDF (fiche + compte rendu)</button>
     </div>
   </div>
 </main>
@@ -517,6 +533,13 @@ Toutes les valeurs string doivent être sur une seule ligne sans retour à la li
     catch(e){throw new Error('JSON invalide : '+raw.slice(0,150));}
 
     compteRendu=d.compte_rendu||'';
+  if(compteRendu){
+    document.getElementById('compteRenduSection').style.display='block';
+    document.getElementById('compteRenduEditor').value=compteRendu;
+    document.getElementById('compteRenduEditor').addEventListener('input',function(){
+      compteRendu=this.value;
+    });
+  }
     setProgress(100,'Fiche générée !');
     setTimeout(()=>{
       document.getElementById('progressPanel').classList.remove('on');
@@ -537,7 +560,7 @@ function bold(t){return t?t.replace(/\*\*([^*]+)\*\*/g,'<strong>$1</strong>'):''
 function renderFiche(d,firstName){
   const tagsEl=document.getElementById('plaudTags');
   tagsEl.innerHTML='';
-  (d.tags||[]).forEach(t=>{const s=document.createElement('span');s.className='plaud-tag';s.textContent=t;tagsEl.appendChild(s);});
+  (d.tags||[]).forEach(t=>{const s=document.createElement('span');s.className='plaud-tag';s.contentEditable='true';s.textContent=t;tagsEl.appendChild(s);});
   document.getElementById('plaudTitle').textContent=d.title||playerName;
   document.getElementById('plaudSubtitle').textContent=d.subtitle||'';
   document.getElementById('plaudDecTitle').textContent=d.decision_title||'';
@@ -553,7 +576,7 @@ function renderFiche(d,firstName){
   document.getElementById('plaudCol1Sub').textContent=d.col1_sub||'';
   const barsEl=document.getElementById('plaudBars1');
   barsEl.innerHTML='';
-  (d.bars||[]).forEach(b=>{const p=Math.min(100,Math.max(0,b.pct||50));barsEl.innerHTML+=`<div class="plaud-bar-row"><div class="plaud-bar-labels"><span>${b.label}</span><span>${b.value}</span></div><div class="plaud-bar-track"><div class="plaud-bar-fill" style="width:${p}%"></div></div></div>`;});
+  (d.bars||[]).forEach(b=>{const p=Math.min(100,Math.max(0,b.pct||50));barsEl.innerHTML+=`<div class="plaud-bar-row"><div class="plaud-bar-labels"><span contenteditable="true">${b.label}</span><span contenteditable="true">${b.value}</span></div><div class="plaud-bar-track"><div class="plaud-bar-fill" style="width:${p}%"></div></div></div>`;});
   const bulletsEl=document.getElementById('plaudBullets1');
   bulletsEl.innerHTML='';
   (d.bullets||[]).forEach(b=>{bulletsEl.innerHTML+=`<div class="plaud-bullet"><div class="plaud-bullet-dot">⊙</div><span contenteditable="true">${b}</span></div>`;});
@@ -613,7 +636,7 @@ async function exportFullPDF(){
       pW=origVp.width*0.352777;pH=origVp.height*0.352777;
       doc=new jsPDF({orientation:pH>pW?'portrait':'landscape',unit:'mm',format:[pW,pH]});
       doc.addImage(tplImg,'JPEG',0,0,pW,pH);
-      const logoEndY=pH*0.15;
+      const logoEndY=pH*0.10;
       const drawW=pW-M*2;
       const drawH=drawW*(ficheH/ficheW);
       const availH=pH-logoEndY-M;
@@ -631,7 +654,7 @@ async function exportFullPDF(){
     if(compteRendu){
       doc.addPage();
       if(tplImg)doc.addImage(tplImg,'JPEG',0,0,pW,pH);
-      renderTextPage(doc,compteRendu,M,pH*0.15,pW-M*2,pH-pH*0.15-M,pW,pH,tplImg);
+      renderTextPage(doc,compteRendu,M,pH*0.10,pW-M*2,pH-pH*0.10-M,pW,pH,tplImg);
     }
 
     doc.save('CR_'+playerName.replace(/[^a-z0-9]/gi,'_').toLowerCase()+'_'+now.toISOString().slice(0,10)+'.pdf');
@@ -675,6 +698,8 @@ function resetAll(){
   document.getElementById('pdfInfo').style.display='none';
   document.getElementById('templatePreview').style.display='none';
   document.getElementById('ficheArea').classList.remove('on');
+  document.getElementById('compteRenduSection').style.display='none';
+  document.getElementById('compteRenduEditor').value='';
   document.getElementById('progressPanel').classList.remove('on');
   document.getElementById('errorBox').style.display='none';
   document.getElementById('playerName').value='';
