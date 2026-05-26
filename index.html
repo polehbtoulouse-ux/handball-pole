@@ -541,8 +541,7 @@ Génère UNIQUEMENT un JSON valide (sans markdown) avec cette structure exacte :
     {"day": "MER", "text": "[activité mercredi]"}
   ],
   "actions": ["[action concrète 1]", "[action concrète 2]", "[action concrète 3]"],
-  "quote_text": "[citation directe du joueur entre guillemets, 10 mots max]",
-  "compte_rendu": "COMPTE RENDU D'ENTRETIEN\n\nDate : [date]\nJoueur : [nom]\n\nCONTEXTE\n[Paragraphe 4-5 lignes sur le contexte de l'entretien, qui était présent, quel était l'objet]\n\nÉCHANGES\n[3 à 5 paragraphes rédigés de 4-6 lignes chacun, restituant fidèlement les thèmes abordés avec les propos du joueur et des entraîneurs. Utiliser des formulations comme 'Le joueur exprime...', 'Les entraîneurs soulignent...', 'Il est rappelé que...']\n\nPOINTS D'ATTENTION\n— [point 1 spécifique]\n— [point 2 spécifique]\n— [point 3 spécifique]\n— [point 4 si pertinent]\n\nRELEVÉ DE DÉCISIONS\n— [décision/engagement 1]\n— [décision/engagement 2]\n— [décision/engagement 3]\n— [décision/engagement 4 si pertinent]"
+  "quote_text": "[citation directe du joueur entre guillemets, 10 mots max]"
 }
 
 RÈGLES IMPORTANTES :
@@ -562,7 +561,7 @@ RÈGLES IMPORTANTES :
       body:JSON.stringify({
         model:'llama-3.3-70b-versatile',
         temperature:0.1,
-        max_tokens:8000,
+        max_tokens:3000,
         messages:[
           {role:'system',content:'Tu es un assistant qui répond UNIQUEMENT avec du JSON valide et rien d\'autre. Pas de texte introductif, pas de markdown, pas de backticks. Commence directement par { et termine par }. Toutes les chaînes de caractères doivent être sur une seule ligne (pas de retours à la ligne dans les valeurs).'},
           {role:'user',content:prompt}
@@ -705,10 +704,8 @@ function renderFiche(d,firstName){
   document.getElementById('plaudQAvatar').textContent=firstName[0].toUpperCase();
   document.getElementById('plaudQText').textContent=d.quote_text||'';
 
-  // Compte rendu texte
-  if (d.compte_rendu) {
-    window._compteRendu = d.compte_rendu;
-  }
+  // Lancer la génération du compte rendu en arrière-plan
+  generateCompteRendu();
 
   document.getElementById('ficheArea').classList.add('on');
   document.getElementById('ficheArea').scrollIntoView({behavior:'smooth',block:'start'});
@@ -844,6 +841,68 @@ function renderTextPage(doc, text, x, startY, maxW, maxH, pW, pH, tplImg) {
         doc.text(wl, x, y); y += lineH;
       }
     }
+  }
+}
+
+async async function generateCompteRendu() {
+  try {
+    const dateStr = now.toLocaleDateString('fr-FR',{day:'numeric',month:'long',year:'numeric'});
+    const maxChars = 6000;
+    const truncated = transcriptText.length > maxChars
+      ? transcriptText.slice(0, maxChars) + '\n[... tronqué ...]'
+      : transcriptText;
+
+    const prompt = `Tu es expert en formation handball au Pôle Espoirs. Rédige un compte rendu détaillé de cet entretien avec ${playerName}.
+
+TRANSCRIPTION :
+${truncated}
+
+Rédige un compte rendu structuré en français avec ces sections exactes, séparées par une ligne vide :
+
+COMPTE RENDU D'ENTRETIEN — ${playerName.toUpperCase()}
+Date : ${dateStr}
+
+CONTEXTE ET DÉROULEMENT
+[3-4 phrases sur qui était présent, l'objet de l'entretien, le contexte]
+
+ÉCHANGES
+[4-6 paragraphes rédigés restituant fidèlement les thèmes abordés. Utiliser "Le joueur exprime...", "Les entraîneurs soulignent...", "Il est rappelé que...". Citer des propos réels.]
+
+POINTS D'ATTENTION
+— [point spécifique 1]
+— [point spécifique 2]
+— [point spécifique 3]
+— [point spécifique 4 si pertinent]
+
+RELEVÉ DE DÉCISIONS
+— [décision/engagement concret 1]
+— [décision/engagement concret 2]
+— [décision/engagement concret 3]
+— [suite si nécessaire]
+
+Sois précis, factuel, ancré dans les propos réels. Pas de généralités.`;
+
+    const r = await fetch('https://api.groq.com/openai/v1/chat/completions', {
+      method: 'POST',
+      headers: {'Authorization': 'Bearer ' + GROQ_KEY, 'Content-Type': 'application/json'},
+      body: JSON.stringify({
+        model: 'llama-3.3-70b-versatile',
+        temperature: 0.2,
+        max_tokens: 3000,
+        messages: [
+          {role: 'system', content: 'Tu rédiges un compte rendu d'entretien professionnel en français. Réponds directement avec le texte, sans introduction ni conclusion.'},
+          {role: 'user', content: prompt}
+        ]
+      })
+    });
+
+    if (r.ok) {
+      const data = await r.json();
+      window._compteRendu = data.choices?.[0]?.message?.content?.trim() || '';
+    }
+  } catch(e) {
+    console.warn('Compte rendu non généré:', e.message);
+    window._compteRendu = '';
   }
 }
 
