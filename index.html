@@ -45,7 +45,7 @@ input::placeholder{color:var(--text3)}
 
 .upload-box{border:1.5px dashed var(--border2);border-radius:var(--r);padding:1.5rem;text-align:center;cursor:pointer;transition:all .2s;background:var(--surface2);position:relative;display:flex;flex-direction:column;align-items:center;gap:8px;min-height:110px;justify-content:center}
 .upload-box:hover,.upload-box.drag{border-color:var(--accent);background:rgba(232,83,58,0.05)}
-.upload-box input[type="file"]{position:absolute;inset:0;opacity:0;cursor:pointer;width:100%;height:100%}
+.upload-box input[type="file"]{position:absolute;inset:0;opacity:0;cursor:pointer;width:100%;height:100%;z-index:10;font-size:0}
 .upload-box svg{width:22px;height:22px;stroke:var(--accent);fill:none;stroke-width:1.5}
 .upload-box .ub-t{font-size:13px;font-weight:500}
 .upload-box .ub-s{font-size:11px;color:var(--text3)}
@@ -185,8 +185,8 @@ input::placeholder{color:var(--text3)}
 
   <div class="panel">
     <div class="panel-label">Fichier audio</div>
-    <div class="upload-box" id="dropAudio">
-      <input type="file" id="audioFile" accept=".m4a,.mp3,.wav,.aac,.ogg,.flac,.mp4,.webm" onchange="handleAudio(this)">
+    <div class="upload-box" id="dropAudio" onclick="document.getElementById('audioFile').click()">
+      <input type="file" id="audioFile" accept=".m4a,.mp3,.wav,.aac,.ogg,.flac,.mp4,.webm" onchange="handleAudio(this)" style="display:none">
       <svg viewBox="0 0 24 24"><path d="M9 18V5l12-2v13M9 18c0 1.1-.9 2-2 2s-2-.9-2-2 .9-2 2-2 2 .9 2 2z"/></svg>
       <div class="ub-t">Audio de l'entretien</div>
       <div class="ub-s">M4A iPhone, MP3, WAV… (max 25 Mo)</div>
@@ -199,8 +199,8 @@ input::placeholder{color:var(--text3)}
 
   <div class="panel">
     <div class="panel-label">Template PDF <span style="font-size:10px;color:var(--text3);font-weight:400;text-transform:none;letter-spacing:0">(optionnel)</span></div>
-    <div class="upload-box" id="dropPDF" style="min-height:80px">
-      <input type="file" id="pdfTemplate" accept=".pdf" onchange="handleTemplate(this)">
+    <div class="upload-box" id="dropPDF" style="min-height:80px" onclick="document.getElementById('pdfTemplate').click()">
+      <input type="file" id="pdfTemplate" accept=".pdf" onchange="handleTemplate(this)" style="display:none">
       <svg viewBox="0 0 24 24"><path d="M14 2H6a2 2 0 00-2 2v16a2 2 0 002 2h12a2 2 0 002-2V8z"/><polyline points="14 2 14 8 20 8"/></svg>
       <div class="ub-t">Importer votre template PDF</div>
       <div class="ub-s">La fiche sera collée par-dessus</div>
