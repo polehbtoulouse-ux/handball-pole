@@ -407,9 +407,7 @@ async function startAnalysis(){
   setStep(2);
 
   try{
-    setProgress(15,'Envoi à Claude pour analyse…','Analyse en cours');
-    const b64=await fileToB64(audioFile);
-    const mime=audioFile.type||'audio/mp4';
+    setProgress(15,'Initialisation…','Analyse en cours');
     const dateStr=now.toLocaleDateString('fr-FR',{day:'numeric',month:'long',year:'numeric'});
     const firstName=playerName.split(' ')[0];
 
@@ -458,6 +456,26 @@ Toutes les valeurs string doivent être sur une seule ligne sans retour à la li
 
     setProgress(40,'Transcription et analyse…');
 
+    // Etape 1: Transcription audio via Groq Whisper
+    const GROQ_KEY = atob('Z3NrX3RHN0xpOTFHTzdlRFFqeFhVSXFOV0dkeWIzRllzNXJDbWpLakJ2V042NEJrZU56bG5QbE4=');
+    setProgress(25,'Transcription audio…');
+    const fd=new FormData();
+    fd.append('file',audioFile,audioFile.name);
+    fd.append('model','whisper-large-v3-turbo');
+    fd.append('language','fr');
+    fd.append('response_format','text');
+    const tr=await fetch('https://api.groq.com/openai/v1/audio/transcriptions',{
+      method:'POST',
+      headers:{'Authorization':'Bearer '+GROQ_KEY},
+      body:fd
+    });
+    if(!tr.ok){const e=await tr.json().catch(()=>({}));throw new Error('Transcription : '+(e.error?.message||tr.status));}
+    const transcription=await tr.text();
+    if(!transcription||transcription.length<10)throw new Error('Transcription vide — vérifiez le fichier audio.');
+
+    setProgress(50,'Analyse par Claude…');
+
+    // Etape 2: Analyse par Claude avec la transcription texte
     const res=await fetch('https://api.anthropic.com/v1/messages',{
       method:'POST',
       headers:{
@@ -472,10 +490,7 @@ Toutes les valeurs string doivent être sur une seule ligne sans retour à la li
         system:systemPrompt,
         messages:[{
           role:'user',
-          content:[
-            {type:'document',source:{type:'base64',media_type:mime,data:b64}},
-            {type:'text',text:userPrompt}
-          ]
+          content:[{type:'text',text:'TRANSCRIPTION DE L'ENTRETIEN :\n\n'+transcription+'\n\n'+userPrompt}]
         }]
       })
     });
