@@ -330,12 +330,16 @@ const now = new Date();
 let audioFile=null, pdfTemplateFile=null, playerName='', compteRendu='';
 
 function handleAudio(input){
-  const f=input.files[0]; if(!f)return;
+  console.log('handleAudio called', input.files);
+  const f=input.files[0];
+  if(!f){console.log('No file selected');return;}
+  console.log('File:', f.name, f.type, f.size);
   audioFile=f;
   document.getElementById('audioInfo').style.display='flex';
   document.getElementById('audioName').textContent=f.name;
   document.getElementById('audioSize').textContent=(f.size/1024/1024).toFixed(2)+' Mo';
   checkReady();
+  console.log('audioFile set:', audioFile.name);
 }
 
 function handleTemplate(input){
