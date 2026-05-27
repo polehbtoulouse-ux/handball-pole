@@ -634,6 +634,7 @@ async function genererCompteRendu(transcription, dateStr) {
 
     const GROQ_KEY = atob('Z3NrX3RHN0xpOTFHTzdlRFFqeFhVSXFOV0dkeWIzRllzNXJDbWpLakJ2V042NEJrZU56bG5QbE4=');
 
+    const audioDateForCR = window._audioDate || dateStr;
     const prompt = `Tu es expert en formation handball au Pôle Espoirs Occitanie. Rédige un compte rendu d'entretien individuel détaillé et professionnel en français.
 
 TRANSCRIPTION :
@@ -643,7 +644,7 @@ STRUCTURE OBLIGATOIRE :
 
 COMPTE RENDU D'ENTRETIEN INDIVIDUEL
 Joueur : ${playerName}
-Date : ${dateStr}
+Date : ${audioDateForCR}
 Lieu : Pôle Espoirs Occitanie
 
 CONTEXTE ET PARTICIPANTS
