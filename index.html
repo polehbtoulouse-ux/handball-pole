@@ -129,6 +129,8 @@ input::placeholder{color:var(--text3)}
 .plaud-echeances-items{display:flex;gap:6px;flex-wrap:wrap}
 .plaud-echeance-pill{background:white;border:0.5px solid #b0d8c0;border-radius:4px;font-size:10px;color:#2a6a3e;padding:2px 7px}
 .plaud-orga{background:#eef4ff;border:0.5px solid #c8d8f8;border-radius:10px;padding:16px}
+.plaud-orga.physique{background:#fff3e8;border-color:#f0c8a0}
+.plaud-orga.mental{background:#f3eeff;border-color:#d0b8f0}
 .plaud-orga-header{display:flex;justify-content:space-between;align-items:center;margin-bottom:10px}
 .plaud-orga-title{font-size:14px;font-weight:600;color:#0c447c}
 .plaud-orga-badge{background:#e0eaf8;border:0.5px solid #c0d4f0;border-radius:20px;font-size:10px;color:#3060a0;padding:3px 10px}
@@ -343,19 +345,24 @@ input::placeholder{color:var(--text3)}
 const _a = atob('c2stYW50LWFwaTAzLVlJMXlwczl4Vl9hSjlnNHNxcGttMmVUdmFDTTQ4WUcyNUpidkxGTWE3cDl2Z2xxMDV0ZDJTWEZkTHhMVkVVMHZsTVNnR3RqWVZhdk85bmtvcVZWOTRRLWVySnphUUFB');
 const CLAUDE_KEY = _a;
 const now = new Date();
+window._audioDate = null;
 let audioFile=null, pdfTemplateFile=null, playerName='', compteRendu='';
 
 function handleAudio(input){
-  console.log('handleAudio called', input.files);
   const f=input.files[0];
-  if(!f){console.log('No file selected');return;}
-  console.log('File:', f.name, f.type, f.size);
+  if(!f)return;
   audioFile=f;
+  // Récupérer la date de l'enregistrement depuis le fichier
+  if(f.lastModified){
+    const d=new Date(f.lastModified);
+    window._audioDate=d.toLocaleDateString('fr-FR',{weekday:'long',day:'numeric',month:'long',year:'numeric'});
+  } else {
+    window._audioDate=null;
+  }
   document.getElementById('audioInfo').style.display='flex';
   document.getElementById('audioName').textContent=f.name;
   document.getElementById('audioSize').textContent=(f.size/1024/1024).toFixed(2)+' Mo';
   checkReady();
-  console.log('audioFile set:', audioFile.name);
 }
 
 function handleTemplate(input){
@@ -462,10 +469,12 @@ Toutes les valeurs string doivent être sur une seule ligne sans retour à la li
   "quote": "[citation clé 6 mots entre guillemets]",
   "checks": ["[fait précis 1]", "[fait précis 2]", "[fait précis 3]"],
   "neutralite": "[label contexte 2 mots]",
+  "col1_type": "[technique|physique|mental]",
   "col1_title": "Attaque : [thème]",
   "col1_sub": "[sous-titre 8 mots]",
   "bars": [{"label": "[compétence]", "value": "[Acquis|À stabiliser|En développement]", "pct": 75}, {"label": "[compétence 2]", "value": "[statut]", "pct": 45}, {"label": "[compétence 3]", "value": "[statut]", "pct": 60}],
   "bullets": ["[point 1]", "[point 2]"],
+  "col2_type": "[technique|physique|mental]",
   "col2_title": "Défense : [thème]",
   "col2_sub": "[sous-titre 8 mots]",
   "highlight_title": "[titre highlight]",
@@ -566,7 +575,9 @@ function renderFiche(d,firstName){
   tagsEl.innerHTML='';
   (d.tags||[]).forEach(t=>{const s=document.createElement('span');s.className='plaud-tag';s.contentEditable='true';s.textContent=t;tagsEl.appendChild(s);});
   document.getElementById('plaudTitle').textContent=d.title||playerName;
-  document.getElementById('plaudSubtitle').textContent=d.subtitle||'';
+  const audioDateStr = window._audioDate ? 'Entretien effectué le '+window._audioDate : '';
+  const subtitle = (d.subtitle||'Évaluation sportive et projection vers le haut niveau') + (audioDateStr ? ' — '+audioDateStr : '');
+  document.getElementById('plaudSubtitle').textContent=subtitle;
   document.getElementById('plaudDecTitle').textContent=d.decision_title||'';
   document.getElementById('plaudDecSub').textContent=d.decision_sub||'';
   document.getElementById('plaudConstat').innerHTML=bold(d.constat||'');
@@ -576,6 +587,8 @@ function renderFiche(d,firstName){
   const checksEl=document.getElementById('plaudChecks');
   checksEl.innerHTML='';
   (d.checks||[]).forEach(c=>{const div=document.createElement('div');div.className='plaud-check-item';div.innerHTML=`<div class="plaud-check-icon">✓</div><span contenteditable="true">${bold(c)}</span>`;checksEl.appendChild(div);});
+  const col1El=document.querySelector('.plaud-cols .plaud-col:first-child');
+  col1El.className='plaud-col'+(d.col1_type==='physique'?' physique':d.col1_type==='mental'?' mental':'');
   document.getElementById('plaudCol1Title').textContent=d.col1_title||'Attaque';
   document.getElementById('plaudCol1Sub').textContent=d.col1_sub||'';
   const barsEl=document.getElementById('plaudBars1');
@@ -584,6 +597,8 @@ function renderFiche(d,firstName){
   const bulletsEl=document.getElementById('plaudBullets1');
   bulletsEl.innerHTML='';
   (d.bullets||[]).forEach(b=>{bulletsEl.innerHTML+=`<div class="plaud-bullet"><div class="plaud-bullet-dot">⊙</div><span contenteditable="true">${b}</span></div>`;});
+  const col2El=document.querySelector('.plaud-cols .plaud-col:last-child');
+  col2El.className='plaud-col'+(d.col2_type==='physique'?' physique':d.col2_type==='mental'?' mental':'');
   document.getElementById('plaudCol2Title').textContent=d.col2_title||'Défense';
   document.getElementById('plaudCol2Sub').textContent=d.col2_sub||'';
   document.getElementById('plaudHighTitle').textContent=d.highlight_title||'';
@@ -768,7 +783,7 @@ function renderTextPage(doc,text,x,startY,maxW,maxH,pW,pH,tplImg){
 }
 
 function resetAll(){
-  audioFile=null;pdfTemplateFile=null;compteRendu='';
+  audioFile=null;pdfTemplateFile=null;compteRendu='';window._audioDate=null;
   document.getElementById('audioFile').value='';
   document.getElementById('pdfTemplate').value='';
   document.getElementById('audioInfo').style.display='none';
