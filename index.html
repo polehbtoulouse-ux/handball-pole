@@ -99,6 +99,38 @@ input::placeholder{color:var(--text3)}
 .plaud-neutralite{display:inline-block;background:rgba(255,255,255,0.1);border:0.5px solid rgba(255,255,255,0.2);border-radius:5px;font-size:10px;color:#a0c0e8;padding:3px 8px;margin-top:8px}
 .plaud-cols{display:grid;grid-template-columns:1.2fr 1fr;gap:10px;margin-bottom:10px}
 .plaud-col{background:#eef4ff;border:0.5px solid #c8d8f8;border-radius:10px;padding:16px}
+.plaud-col.physique{background:#fff3e8;border-color:#f0c8a0}
+.plaud-col.physique .plaud-col-title{color:#8a4400}
+.plaud-col.physique .plaud-col-sub{color:#a05a20}
+.plaud-col.physique .plaud-col-icon{color:#c07030}
+.plaud-col.physique .plaud-bar-labels{color:#a05a20}
+.plaud-col.physique .plaud-bar-track{background:#f8dfc0}
+.plaud-col.physique .plaud-bar-fill{background:linear-gradient(90deg,#e08030,#f0b060)}
+.plaud-col.physique .plaud-bullet{color:#7a3a00}
+.plaud-col.physique .plaud-bullet-dot{background:#fde8c8;border-color:#f0c090;color:#c07030}
+.plaud-col.physique .plaud-levier-num{background:#fde8c8;border-color:#f0c090;color:#a05020}
+.plaud-col.physique .plaud-levier-text{color:#7a3a00}
+.plaud-col.physique .plaud-levier-text strong{color:#8a4400}
+.plaud-col.physique .plaud-highlight{background:#fdddc0;border-color:#f0b880}
+.plaud-col.physique .plaud-highlight-title{color:#8a4400}
+.plaud-col.physique .plaud-highlight-sub{color:#a05020}
+.plaud-col.physique .plaud-leviers-label{color:#c07030}
+.plaud-col.mental{background:#f3eeff;border-color:#d0b8f0}
+.plaud-col.mental .plaud-col-title{color:#4a0088}
+.plaud-col.mental .plaud-col-sub{color:#6a30a0}
+.plaud-col.mental .plaud-col-icon{color:#8050c0}
+.plaud-col.mental .plaud-bar-labels{color:#6a30a0}
+.plaud-col.mental .plaud-bar-track{background:#e8d8f8}
+.plaud-col.mental .plaud-bar-fill{background:linear-gradient(90deg,#7040c0,#a070e0)}
+.plaud-col.mental .plaud-bullet{color:#3a0070}
+.plaud-col.mental .plaud-bullet-dot{background:#e8d8f8;border-color:#c8a8e8;color:#8050c0}
+.plaud-col.mental .plaud-levier-num{background:#e8d8f8;border-color:#c8a8e8;color:#6030a0}
+.plaud-col.mental .plaud-levier-text{color:#3a0070}
+.plaud-col.mental .plaud-levier-text strong{color:#4a0088}
+.plaud-col.mental .plaud-highlight{background:#ddc8f8;border-color:#c0a0e8}
+.plaud-col.mental .plaud-highlight-title{color:#4a0088}
+.plaud-col.mental .plaud-highlight-sub{color:#6a30a0}
+.plaud-col.mental .plaud-leviers-label{color:#8050c0}
 .plaud-col-header{display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:4px}
 .plaud-col-title{font-size:14px;font-weight:600;color:#0c447c}
 .plaud-col-icon{font-size:18px;color:#6080c0}
@@ -609,7 +641,7 @@ function renderFiche(d,firstName){
   const col1Type=detectColType(col1Text);
   console.log('COL1 text:', col1Text);
   console.log('COL1 type detected:', col1Type);
-  col1El.className='plaud-col '+col1Type;
+  col1El.className=col1Type?'plaud-col '+col1Type:'plaud-col';
   document.getElementById('plaudCol1Title').textContent=d.col1_title||'Attaque';
   document.getElementById('plaudCol1Sub').textContent=d.col1_sub||'';
   const barsEl=document.getElementById('plaudBars1');
@@ -623,7 +655,7 @@ function renderFiche(d,firstName){
   const col2Type=detectColType(col2Text);
   console.log('COL2 text:', col2Text);
   console.log('COL2 type detected:', col2Type);
-  col2El.className='plaud-col '+col2Type;
+  col2El.className=col2Type?'plaud-col '+col2Type:'plaud-col';
   document.getElementById('plaudCol2Title').textContent=d.col2_title||'Défense';
   document.getElementById('plaudCol2Sub').textContent=d.col2_sub||'';
   document.getElementById('plaudHighTitle').textContent=d.highlight_title||'';
