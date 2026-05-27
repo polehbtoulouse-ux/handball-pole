@@ -568,13 +568,18 @@ Toutes les valeurs string doivent être sur une seule ligne sans retour à la li
   }
 }
 
+function normalizeStr(s){
+  return (s||'').toLowerCase()
+    .normalize('NFD').replace(/[\u0300-\u036f]/g,'');
+}
 function detectColType(text){
-  const t = (text||'').toLowerCase();
-  const physMots = ['souplesse','physique','athlét','muscu','gainage','vitesse','force','appuis','coord','équilibre','contact','engagement','explosiv','morpho','relâche','mobilité','motric','corps','biométri','corporel','récupér','physiolog','endurance','sprint','course'];
-  const mentalMots = ['mental','confiance','appréhension','peur','stress','motivation','comportement','leadership','concentration','émot','psycholog','volonté','caractère','détermination','ambition','attitude','pression','gestion'];
+  const t = normalizeStr(text);
+  const physMots = ['souplesse','physique','athleti','muscu','gainage','vitesse','force','appuis','coord','equilibre','contact','engagement','explosiv','morpho','relache','mobilite','motric','corps','corporel','recuper','physiolog','endurance','sprint','course','aisance motrice','relachement'];
+  const mentalMots = ['mental','confiance','apprehension','peur','stress','motivation','comportement','leadership','concentration','emot','psycholog','volonte','caractere','determination','ambition','attitude','pression','gestion','serenitе','serenite'];
   let physScore=0, mentalScore=0;
-  physMots.forEach(m=>{if(t.includes(m))physScore++;});
-  mentalMots.forEach(m=>{if(t.includes(m))mentalScore++;});
+  physMots.forEach(m=>{if(t.includes(normalizeStr(m)))physScore++;});
+  mentalMots.forEach(m=>{if(t.includes(normalizeStr(m)))mentalScore++;});
+  console.log('detectColType text:', t.slice(0,80), '| phys:', physScore, '| mental:', mentalScore);
   if(physScore>0 && physScore>=mentalScore)return 'physique';
   if(mentalScore>0 && mentalScore>physScore)return 'mental';
   return '';
@@ -600,7 +605,11 @@ function renderFiche(d,firstName){
   checksEl.innerHTML='';
   (d.checks||[]).forEach(c=>{const div=document.createElement('div');div.className='plaud-check-item';div.innerHTML=`<div class="plaud-check-icon">✓</div><span contenteditable="true">${bold(c)}</span>`;checksEl.appendChild(div);});
   const col1El=document.querySelector('.plaud-cols .plaud-col:first-child');
-  col1El.className='plaud-col '+detectColType(d.col1_title+' '+d.col1_sub+' '+(d.bars||[]).map(b=>b.label).join(' '));
+  const col1Text=d.col1_title+' '+d.col1_sub+' '+(d.bars||[]).map(b=>b.label).join(' ');
+  const col1Type=detectColType(col1Text);
+  console.log('COL1 text:', col1Text);
+  console.log('COL1 type detected:', col1Type);
+  col1El.className='plaud-col '+col1Type;
   document.getElementById('plaudCol1Title').textContent=d.col1_title||'Attaque';
   document.getElementById('plaudCol1Sub').textContent=d.col1_sub||'';
   const barsEl=document.getElementById('plaudBars1');
@@ -610,7 +619,11 @@ function renderFiche(d,firstName){
   bulletsEl.innerHTML='';
   (d.bullets||[]).forEach(b=>{bulletsEl.innerHTML+=`<div class="plaud-bullet"><div class="plaud-bullet-dot">⊙</div><span contenteditable="true">${b}</span></div>`;});
   const col2El=document.querySelector('.plaud-cols .plaud-col:last-child');
-  col2El.className='plaud-col '+detectColType(d.col2_title+' '+d.col2_sub+' '+(d.leviers||[]).join(' '));
+  const col2Text=d.col2_title+' '+d.col2_sub+' '+(d.leviers||[]).join(' ');
+  const col2Type=detectColType(col2Text);
+  console.log('COL2 text:', col2Text);
+  console.log('COL2 type detected:', col2Type);
+  col2El.className='plaud-col '+col2Type;
   document.getElementById('plaudCol2Title').textContent=d.col2_title||'Défense';
   document.getElementById('plaudCol2Sub').textContent=d.col2_sub||'';
   document.getElementById('plaudHighTitle').textContent=d.highlight_title||'';
