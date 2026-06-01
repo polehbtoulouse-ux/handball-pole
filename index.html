@@ -214,6 +214,15 @@ input::placeholder{color:var(--text3)}
     <div class="step" id="s3"><div class="step-dot">3</div><div class="step-label">Modifier & exporter</div></div>
   </div>
 
+  <div class="panel" id="groqPanel">
+    <div class="panel-label">Clé API Groq <span style="font-size:10px;color:var(--text3);font-weight:400;text-transform:none;letter-spacing:0">(stockée dans votre navigateur uniquement)</span></div>
+    <div style="display:flex;gap:8px">
+      <input type="password" id="groqKeyInput" placeholder="gsk_..." style="font-size:13px;padding:9px 12px" oninput="checkGroqKey()">
+      <button class="btn btn-outline" onclick="saveGroqKey()" style="white-space:nowrap">Enregistrer</button>
+    </div>
+    <div id="groqKeyStatus" style="font-size:12px;margin-top:6px;color:var(--text3)"></div>
+  </div>
+
   <div class="panel">
     <div class="panel-label">Identité du joueur</div>
     <input type="text" id="playerName" placeholder="Nom complet du joueur (ex : Hugo Martin)" oninput="checkReady()">
@@ -377,6 +386,23 @@ input::placeholder{color:var(--text3)}
 const _a = atob('c2stYW50LWFwaTAzLVlJMXlwczl4Vl9hSjlnNHNxcGttMmVUdmFDTTQ4WUcyNUpidkxGTWE3cDl2Z2xxMDV0ZDJTWEZkTHhMVkVVMHZsTVNnR3RqWVZhdk85bmtvcVZWOTRRLWVySnphUUFB');
 const CLAUDE_KEY = _a;
 const now = new Date();
+
+function saveGroqKey(){
+  const k=document.getElementById('groqKeyInput').value.trim();
+  if(!k)return;
+  localStorage.setItem('hbai_groq_key',k);
+  document.getElementById('groqKeyStatus').textContent='✓ Clé enregistrée dans ce navigateur';
+  document.getElementById('groqKeyStatus').style.color='var(--success)';
+  document.getElementById('groqPanel').style.display='none';
+  checkReady();
+}
+
+function checkGroqKey(){
+  const stored=localStorage.getItem('hbai_groq_key');
+  if(stored){
+    document.getElementById('groqPanel').style.display='none';
+  }
+}
 window._audioDate = null;
 let audioFile=null, pdfTemplateFile=null, playerName='', compteRendu='';
 
@@ -526,10 +552,24 @@ Toutes les valeurs string doivent être sur une seule ligne sans retour à la li
 
     setProgress(40,'Transcription et analyse…');
 
-    // Claude traite directement l'audio
-    setProgress(25,'Envoi audio à Claude…');
-    const b64=await fileToB64(audioFile);
-    const mime=audioFile.type||'audio/mp4';
+    // Etape 1: Transcription via Groq Whisper (clé stockée localement)
+    const GROQ_KEY = localStorage.getItem('hbai_groq_key');
+    if(!GROQ_KEY) throw new Error('Clé Groq manquante. Rechargez la page et configurez votre clé Groq.');
+    setProgress(25,'Transcription audio…');
+    const fd=new FormData();
+    fd.append('file',audioFile,audioFile.name);
+    fd.append('model','whisper-large-v3-turbo');
+    fd.append('language','fr');
+    fd.append('response_format','text');
+    const tr=await fetch('https://api.groq.com/openai/v1/audio/transcriptions',{
+      method:'POST',
+      headers:{'Authorization':'Bearer '+GROQ_KEY},
+      body:fd
+    });
+    if(!tr.ok){const e=await tr.json().catch(()=>({}));throw new Error('Transcription : '+(e.error?.message||tr.status));}
+    const transcription=await tr.text();
+    if(!transcription||transcription.length<10)throw new Error('Transcription vide — vérifiez le fichier audio.');
+    window._lastTranscription=transcription;
 
     setProgress(50,'Analyse par Claude…');
     const res=await fetch('https://api.anthropic.com/v1/messages',{
@@ -546,10 +586,7 @@ Toutes les valeurs string doivent être sur une seule ligne sans retour à la li
         system:systemPrompt,
         messages:[{
           role:'user',
-          content:[
-            {type:'document',source:{type:'base64',media_type:mime,data:b64}},
-            {type:'text',text:userPrompt}
-          ]
+          content:[{type:'text',text:'TRANSCRIPTION DE L\'ENTRETIEN :\n\n'+transcription+'\n\n'+userPrompt}]
         }]
       })
     });
@@ -721,24 +758,24 @@ RELEVÉ DE DÉCISIONS ET ENGAGEMENTS
 
 Sois précis, factuel et ancré dans les propos réels de l'entretien. Aucune généralité.`;
 
-    const r = await fetch('https://api.anthropic.com/v1/messages', {
+    const GROQ_KEY_CR = localStorage.getItem('hbai_groq_key');
+    const r = await fetch('https://api.groq.com/openai/v1/chat/completions', {
       method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-        'x-api-key': CLAUDE_KEY,
-        'anthropic-version': '2023-06-01',
-        'anthropic-dangerous-direct-browser-access': 'true'
-      },
+      headers: {'Authorization': 'Bearer ' + (GROQ_KEY_CR||''), 'Content-Type': 'application/json'},
       body: JSON.stringify({
-        model: 'claude-opus-4-5',
+        model: 'llama-3.3-70b-versatile',
+        temperature: 0.2,
         max_tokens: 4000,
-        messages: [{role: 'user', content: prompt}]
+        messages: [
+          {role: 'system', content: 'Tu rédiges un compte rendu professionnel détaillé en français.'},
+          {role: 'user', content: prompt}
+        ]
       })
     });
 
     if (r.ok) {
       const data = await r.json();
-      compteRendu = data.content?.map(c=>c.text||'').join('').trim() || '';
+      compteRendu = data.choices?.[0]?.message?.content?.trim() || '';
       document.getElementById('compteRenduEditor').value = compteRendu;
       document.getElementById('compteRenduEditor').addEventListener('input', function(){
         compteRendu = this.value;
@@ -832,6 +869,14 @@ function renderTextPage(doc,text,x,startY,maxW,maxH,pW,pH,tplImg){
     }
   }
 }
+
+// Check Groq key on load
+window.addEventListener('load',function(){
+  const k=localStorage.getItem('hbai_groq_key');
+  if(k){
+    document.getElementById('groqPanel').style.display='none';
+  }
+});
 
 function resetAll(){
   audioFile=null;pdfTemplateFile=null;compteRendu='';window._audioDate=null;
